@@ -50,6 +50,8 @@ test("converts USDA units into the AAFCO table's units", () => {
   assert.equal(fa[j("Linoleic acid")], 1.5); assert.equal(fa[j("Alpha-linolenic acid")], 0.2); assert.equal(fa[j("Arachidonic acid")], 0.05);
   assert.equal(fa[j("Polyunsaturated fat")], 1.9); assert.equal(fa[j("Niacin B3")], 6); assert.equal(fa[j("Pantothenic acid B5")], 1.5);
   assert.equal(mapNutrients(hit([1316, "675", 2.2]))[j("Linoleic acid")], 2.2, "newer n-6 c,c field is a fallback");
+  const cs = mapNutrients(hit([1005, "205", 12.3], [1063, "269", 4.4]));
+  assert.equal(cs[j("Carbohydrate")], 12.3); assert.equal(cs[j("Sugars")], 4.4);
   // a nutrient the record does not carry is null (unknown), never 0 or NaN; a reported 0 stays 0
   assert.ok(mapNutrients({ foodNutrients: [{ nutrientId: 1003, value: null }] }).every(v => v === null));
   assert.ok(mapNutrients({}).every(v => v === null));

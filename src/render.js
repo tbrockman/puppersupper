@@ -1,4 +1,4 @@
-import { NUTS, UNITS, PERIODS, SOURCES, NOTES, PURPOSE, DISPLAY, iKcal } from "./data.js";
+import { NUTS, UNITS, PERIODS, SOURCES, NOTES, PURPOSE, DISPLAY, hazardsOf, iKcal, iALA, iAA, iPUFA } from "./data.js";
 import { S, gramsPerDay, unknownOf } from "./state.js";
 import { analyze, ENERGY_TOLERANCE, N6N3_MAX, E_PUFA_MIN } from "./analysis.js";
 import { icon } from "./icons.js";
@@ -23,9 +23,11 @@ export const openEditors = new Set();
 export const badgeHtml = it => { const n = unknownOf(it).length; return n ? `<span class="badge">${n}</span>` : ""; };
 function foodRow(it){
   const g = gramsPerDay(it), bad = !Number.isFinite(g), open = openEditors.has(it.id);
-  return `<tr data-id="${esc(it.id)}" class="${open?"open":""}">
+  const hz = hazardsOf(it);
+  const hazard = hz.length ? ` <span class="info hazard" tabindex="0" role="note" data-tip="${esc(`Known to harm dogs: ${hz.map(h=>h.what).join("; ")}. ${hz.map(h=>h.why).join(" ")}`)}" data-src="${esc(SOURCES[hz[0].src].url)}" data-src-title="${esc(SOURCES[hz[0].src].title)}">${icon("alert",14)}</span>` : "";
+  return `<tr data-id="${esc(it.id)}" class="${open?"open":""}${hz.length?" hazardous":""}">
     <td class="foodname">
-      ${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}
+      ${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}${hazard}
     </td>
     <td class="num amount"><input type="text" inputmode="decimal" class="${bad?"bad":""}" value="${esc(it.amount)}" data-f="amount" aria-label="${esc(it.name)} amount" spellcheck="false"></td>
     <td><select data-f="unit" aria-label="unit">${opts(UNITS, it.unit)}</select></td>
@@ -48,7 +50,7 @@ export function renderFoods(){
   const tbl = document.getElementById("tbl-foods");
   const focused = adderRow && adderRow.contains(document.activeElement) ? document.activeElement : null;
   tbl.innerHTML = head + "<tbody>" + S.foods.map(it=> foodRow(it) + (openEditors.has(it.id) ? editorRow(it) : "")).join("") + "</tbody>";
-  if(adderRow){ tbl.tBodies[0].appendChild(adderRow); focused?.focus({ preventScroll:true }); } // moving the node drops focus; give it back
+  if(adderRow){ tbl.tBodies[0].prepend(adderRow); focused?.focus({ preventScroll:true }); } // moving the node drops focus; give it back
   fitAll(tbl);
   document.querySelectorAll("input[data-g]").forEach(i=>{ if(+i.value !== S[i.dataset.g]) i.value = S[i.dataset.g]; });
   const wu = document.getElementById("g-weightUnit"); if(wu.value !== S.weightUnit) wu.value = S.weightUnit;
@@ -117,7 +119,7 @@ function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false, ends={}){
   const pos = noMin ? x => Math.max(0, Math.min(100, 100*x/hi))
                     : x => Math.max(0, Math.min(100, 100*Math.log(Math.max(x,lo)/lo)/Math.log(hi/lo)));
   const bandL = noMin ? 0 : pos(mn), bandR = top!=null ? pos(top) : 100, dot = pos(v);
-  const right = top==null ? tick("no max", 100, "nomax", ends.open || "")
+  const right = top==null ? tick("-", 100, "nomax", ends.open || "")
               : isAdv     ? tick(fmtTick(top), bandR, "adv", ends.adv?.tip || "", ends.adv?.src)
               :             tick(fmtTick(top), bandR);
   // the band's edges are the minimum and maximum; the tick numbers beneath them say which is which
@@ -126,6 +128,10 @@ function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false, ends={}){
     tick(fmtTick(noMin ? 0 : mn), bandL) + right, dot, label);
 }
 const pctText = p => Number.isFinite(p) ? (100*p).toFixed(0)+"%" : "?";
+/** A tick or cross for the status column: ok/marginal → tick, low/high/watch → cross, coloured by kind; the title says why. */
+const mark = (kind, title) => kind==="none" ? `<span class="mark none" title="${esc(title||"")}">\u2013</span>`
+  : `<span class="mark ${kind}" title="${esc(title||"")}">${icon(kind==="ok"||kind==="marg" ? "check" : "x", 15)}</span>`;
+const kindOf = st => ({ ok:"ok", marginal:"marg", low:"low", high:"high", watch:"watch" })[st] || "none";
 export function renderAnalysis(){
   const a = analyze(), { kcal, rer, mer, ePct, caP } = a;
   const missWarn = (what, list_) => list_.length ? " " + warn(`${what} is not reported for: ${list(list_.map(m=>m.name))}.`) : "";
@@ -141,26 +147,29 @@ export function renderAnalysis(){
     : "";
   // computed rows
   const caText = Number.isFinite(caP) ? caP.toFixed(2) : caP===Infinity ? "\u221e" : "\u2013";
-  const caStatus = Number.isNaN(caP) ? "no calcium or phosphorus yet" : caP<1 ? "below 1.0 \u00b7 add calcium" : caP>2 ? "above 2.0 \u00b7 too much calcium" : "within range";
+  const caKind = Number.isNaN(caP) ? "none" : caP<1 ? "low" : caP>2 ? "high" : "ok";
+  const caStatus = mark(caKind, caText) + (caKind==="none" ? " no calcium or phosphorus yet" : caKind==="low" ? " add calcium" : caKind==="high" ? " too much calcium" : "");
   const vitals =
     vrow(a.energy==="ok"?"okrow":"low", "Calories per day",
         `Energy in the diet versus the estimated need: RER \u00d7 activity, where RER = 70 \u00d7 kg^0.75 = ${rer.toFixed(0)} kcal here. Within \u00b1${tol}% counts as on target. Adjust to the dog\u2019s body condition over time.`,
         strip(kcal, mer*(1-ENERGY_TOLERANCE), mer*(1+ENERGY_TOLERANCE), `${kcal.toFixed(0)} kcal`, v=>v.toFixed(0)),
-        a.energy==="unknown" ? "enter the dog\u2019s weight" : `${pctText(ePct)} of daily need${a.energy==="high"?" \u00b7 overfeeding":a.energy==="low"?" \u00b7 underfeeding":""}`,
+        a.energy==="unknown" ? mark("none") + " enter the dog\u2019s weight" : mark(kindOf(a.energy), `${pctText(ePct)} of daily need`) + (a.energy==="high"?" overfeeding":a.energy==="low"?" underfeeding":""),
         `in ${a.grams.toFixed(0)} g of food`)
-  + vrow(caStatus==="within range"?"okrow":"low", "Ca : P ratio" + missWarn("Calcium or phosphorus", a.caPMissing),
+  + vrow(caKind==="ok"?"okrow":caKind==="none"?"":"low", "Ca : P ratio",
         "Calcium to phosphorus by weight. Meat is phosphorus-rich, so home-cooked diets usually need a calcium source to land between 1:1 and 2:1.",
-        strip(Number.isNaN(caP)?0:caP, 1, 2, caText, v=>v.toFixed(1)), caStatus)
+        strip(Number.isNaN(caP)?0:caP, 1, 2, caText, v=>v.toFixed(1)), caStatus + missWarn("Calcium or phosphorus", a.caPMissing))
   + vrow(a.n6n3.status==="ok"?"okrow":a.n6n3.status==="high"?"low":"",
-        `<span class="wrap">Omega-6 :<br>Omega-3 ${info(`AAFCO caps (linoleic + arachidonic) : (alpha-linolenic + EPA + DHA) at ${N6N3_MAX}:1 for adult dogs. Omega-3 has no minimum of its own; enough is needed to hold the ratio. Fish, fish oil and flaxseed lower it.`)}${missWarn("A fatty acid", a.n6n3.missing)}</span>`,
+        `<span class="wrap">Omega-6 :<br>Omega-3 ${info(`AAFCO caps (linoleic + arachidonic) : (alpha-linolenic + EPA + DHA) at ${N6N3_MAX}:1 for adult dogs. Omega-3 has no minimum of its own; enough is needed to hold the ratio. More omega-3 (fish, fish oil, flaxseed) or less omega-6 (vegetable oils, poultry fat) lowers it.`)}</span>`,
         "",
         strip(Number.isNaN(a.n6n3.value)?0:a.n6n3.value, 1, N6N3_MAX, ratioText(a.n6n3.value, 1) + " : 1", v=>v.toFixed(0), null, true),
-        a.n6n3.status==="unknown" ? (a.n6n3.missing.length ? "incomplete fatty-acid data" : "no fatty-acid data") : a.n6n3.status==="high" ? `above ${N6N3_MAX}:1 \u00b7 add omega-3` : `within ${N6N3_MAX}:1`)
-  + vrow(a.ePufa.status==="ok"?"okrow":a.ePufa.status==="low"?"low":"", "Vitamin E : PUFA" + missWarn("Vitamin E or polyunsaturated fat", a.ePufa.missing),
+        a.n6n3.status==="unknown" ? mark("none") + missWarn("A fatty acid", a.n6n3.missing) + (a.n6n3.missing.length ? " incomplete fatty-acid data" : " no fatty-acid data")
+          : a.n6n3.status==="high" ? mark("high", `above ${N6N3_MAX}:1`) + " more omega-3 or less omega-6" : mark("ok", `within ${N6N3_MAX}:1`))
+  + vrow(a.ePufa.status==="ok"?"okrow":a.ePufa.status==="low"?"low":"", "Vitamin E : PUFA",
         `AAFCO asks for at least ${E_PUFA_MIN} IU of vitamin E per gram of polyunsaturated fat, since vitamin E is used up protecting those fats. Adding fish oil raises the need.`,
         strip(Number.isNaN(a.ePufa.value)?0:a.ePufa.value, E_PUFA_MIN, null, ratioText(a.ePufa.value) + " IU/g", v=>v.toFixed(1), null, false,
               { open: "There is no upper limit on vitamin E per gram of polyunsaturated fat; more is fine. The band is open-ended and drawn just past the value." }),
-        a.ePufa.status==="unknown" ? (a.ePufa.missing.length ? "incomplete data" : "no data") : a.ePufa.status==="low" ? `below ${E_PUFA_MIN} IU/g \u00b7 add vitamin E` : `at least ${E_PUFA_MIN} IU/g`);
+        a.ePufa.status==="unknown" ? mark("none") + missWarn("Vitamin E or polyunsaturated fat", a.ePufa.missing) + (a.ePufa.missing.length ? " incomplete data" : " no data")
+          : a.ePufa.status==="low" ? mark("low", `below ${E_PUFA_MIN} IU/g`) + " add vitamin E" : mark("ok", `at least ${E_PUFA_MIN} IU/g`));
 
   const srcAttrs = keys => { const sr = SOURCES[keys[0]]; return sr ? ` data-src="${esc(sr.url)}" data-src-title="${esc(sr.title)}"` : ""; };
   const rows = DISPLAY.map(j=>a.rows[j]).map(r=>{
@@ -168,28 +177,35 @@ export function renderAnalysis(){
     const note = NOTES[r.name];
     const breeds = note?.breeds ? " " + info(note.breeds, 12, srcAttrs(note.src) + ` class="info breed"`) : "";
     const isEPA = r.name==="EPA+DHA", u = r.unit;
-    const cls = { high:"high", watch:"marg", low:"low", marginal:"marg", ok:"okrow", unknown:"" }[r.status];
+    const miss = r.missing.length ? " " + warn(`${r.name} is not reported for: ${list(r.missing.map(m=>m.name))}.`, 13, ` data-jump="${r.j}"`) : "";
+    // a nutrient with no minimum of its own is judged by the balance it feeds
+    const related = r.j===iALA || r.j===iAA ? a.n6n3 : r.j===iPUFA ? a.ePufa : null;
+    const relKind = !related ? "none" : related.status==="ok" ? "ok" : related.status==="unknown" ? "none" : related.status;
+    const purpose = PURPOSE[r.name] ? " " + info(PURPOSE[r.name], 12) : "";
+    const cls = ({ high:"high", watch:"marg", low:"low", marginal:"marg", ok:"okrow", unknown:"", info:"infor" }[r.status])
+      + (!r.dayMin && r.status!=="info" && relKind!=="none" && relKind!=="ok" ? " low" : "");   // a no-minimum row whose balance is off is tinted too
     const ge = r.missing.length ? "\u2265 " : "";   // a lower bound when some food's value is unknown
     const advTip = r.adv ? `${r.name} has no AAFCO maximum. The dashed line is ${r.adv.basis}: ${fmt(r.adv.max)} ${u} per 1,000 kcal, ${fmt(r.dayAdv)} ${u} a day for this dog. ${r.adv.why}` : "";
     const over = r.status==="high" || r.status==="watch", under = r.status==="low" || r.status==="marginal";
     const sign = over ? note?.excess : under ? note?.deficit : "";        // what sustained excess or shortfall looks like
     const noteIcon = sign ? " " + info(sign, 12, srcAttrs(note.src)) : "";
-    const st = r.status==="unknown" ? "enter the dog\u2019s weight"
-      : r.status==="high" ? "over max" + noteIcon
-      : r.status==="watch" ? "above advisory level" + noteIcon
-      : r.status==="low" ? (isEPA ? "below target \u00b7 " : "LOW \u00b7 ") + ge + pctText(r.pct) + noteIcon
-      : r.status==="marginal" ? "marginal \u00b7 " + ge + pctText(r.pct) + noteIcon
-      : r.dayMin ? ge + pctText(r.pct) + (isEPA ? " of target" : " of daily minimum") : "no minimum" + (PURPOSE[r.name] ? " " + info(PURPOSE[r.name], 12) : "");
-    const miss = r.missing.length ? " " + warn(`${r.name} is not reported for: ${list(r.missing.map(m=>m.name))}.`, 13, ` data-jump="${r.j}"`) : "";
+    const st = r.status==="info" ? `<span class="src">for information</span>${purpose}`
+      : r.status==="unknown" ? mark("none") + " enter the dog\u2019s weight"
+      : r.status==="high" ? mark("high", "over the AAFCO maximum") + miss + noteIcon
+      : r.status==="watch" ? mark("watch", "above the advisory level") + miss + noteIcon
+      : r.status==="low" ? mark("low", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + miss + noteIcon
+      : r.status==="marginal" ? mark("marg", `marginal: ${ge}${pctText(r.pct)} of daily minimum`) + miss + noteIcon
+      : r.dayMin ? mark("ok", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + miss
+      : mark(relKind, related ? `judged by the ${r.j===iPUFA ? "vitamin E : PUFA" : "omega-6 : omega-3"} balance` : "") + miss + purpose;
     // with no energy need to scale by, fall back to judging density against the per-1,000 kcal profile
     const ends = r.adv ? { adv: { tip: advTip, src: SOURCES[r.adv.src[0]] } }
       : { open: `AAFCO sets no maximum for ${r.name.toLowerCase()}, and no other published upper figure exists. The band is open-ended: it is drawn to 1.3\u00d7 the larger of the value and the minimum so the dot has room, and being well above the minimum is normal.` };
     const bar = r.status==="unknown" ? strip(r.per1000, r.min, r.max, `${fmt(r.per1000)} /1,000 kcal`, fmt, r.adv?.max, false, ends)
                                      : strip(r.day, r.dayMin, r.dayMax, fmt(r.day), fmt, r.dayAdv, false, ends);
-    return `<tr class="${cls}"><td><span class="nm">${r.name}${breeds}${miss}</span><span class="src" style="display:block">${u}</span></td>
+    return `<tr class="${cls}"><td><span class="nm">${r.name}${breeds}</span><span class="src" style="display:block">${u}</span></td>
       <td class="c-range">${bar}</td><td class="status">${st}</td></tr>`;
   }).join("");
-  document.querySelector("#tbl-an tbody").innerHTML = vitals + `<tr class="group"><td colspan="3">Nutrients per day</td></tr>` + rows;
+  document.querySelector("#tbl-an tbody").innerHTML = vitals + rows;
   syncColumns();
 }
 /**

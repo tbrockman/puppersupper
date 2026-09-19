@@ -82,7 +82,7 @@ export async function search(q){
   const j = await fetchJson(`${API}/foods/search?api_key=${apiKey()}&query=${encodeURIComponent(q)}&pageSize=10&dataType=${encodeURIComponent("Foundation,SR Legacy,Branded")}`);
   const foods=(j.foods||[]).map(x=>{
     const per100 = mapNutrients(x);
-    return {fdcId:x.fdcId, description:x.description, dataType:x.dataType, brandOwner:x.brandOwner||"", per100: per100.some(v=>v>0) ? per100 : null};
+    return {fdcId:x.fdcId, description:x.description, dataType:x.dataType, brandOwner:x.brandOwner||"", ingredients:(x.ingredients||"").slice(0,600), per100: per100.some(v=>v>0) ? per100 : null};
   });
   store.set(key,foods); return foods;
 }
@@ -120,7 +120,8 @@ const MAP=[
  [[1270,"619",1],[1404,"851",1]],                         // alpha-linolenic 18:3 (n-3 c,c,c in newer records)
  [[1271,"620",1]],                                        // arachidonic 20:4
  [[1293,"646",1]],                                        // total PUFA
- [[1167,"406",1]], [[1170,"410",1]]];                     // niacin, pantothenic acid
+ [[1167,"406",1]], [[1170,"410",1]],                      // niacin, pantothenic acid
+ [[1005,"205",1]], [[2000,"269",1],[1063,"269",1]]];       // carbohydrate by difference; sugars (total, or NLEA)
 const EPA=[1278,"629"], DHA=[1272,"621"];
 const VA_IU=[1104,"318"], VA_RAE=[1106,"320"], RETINOL=[1105,"319"], B_CAR=[1107,"321"], A_CAR=[1108,"322"], CRYPTO=[1120,"334"];
 if(MAP.length!==NUTS.length) throw new Error("FDC MAP does not match NUTS");

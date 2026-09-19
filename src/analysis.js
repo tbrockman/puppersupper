@@ -11,7 +11,7 @@
  * complete diet: its 21 g of protein is 156 g per 1,000 kcal, well over 45,
  * while the dog is short of both calories and protein.
  */
-import { NUTS, ADVISORY, iKcal, iCa, iP, iVitE, iEPA, iLA, iALA, iAA, iPUFA } from "./data.js";
+import { NUTS, ADVISORY, isInfo, iKcal, iCa, iP, iVitE, iEPA, iLA, iALA, iAA, iPUFA } from "./data.js";
 import { S, totals, totalGrams, weightKg, missing } from "./state.js";
 
 /** Resting energy requirement, kcal/day, for a body weight in kg. */
@@ -32,7 +32,8 @@ export const MARGINAL = 1.2;
  *   adv      advisory upper level per 1,000 kcal for a nutrient with no AAFCO maximum (see ADVISORY)
  * Returns { dayMin, dayMax, dayAdv, pct, status } where status is one of
  * "unknown" (no energy need to scale by), "high" (over the AAFCO maximum),
- * "watch" (over the advisory level), "low", "marginal", "ok".
+ * "watch" (over the advisory level), "low", "marginal", "ok"; analyze() adds
+ * "info" for rows shown for information only.
  */
 export function judge(day, mer, mn, mx, adv = null){
   if(!(mer > 0)) return { dayMin: null, dayMax: null, dayAdv: null, pct: NaN, status: "unknown" };
@@ -84,7 +85,9 @@ export function analyze(state = S){
     const day = t[j];
     const per1000 = kcal > 0 ? day / kcal * 1000 : NaN;
     const adv = ADVISORY[name] ?? null;
-    const v = j === iKcal ? { dayMin: null, dayMax: null, dayAdv: null, pct: NaN, status: "energy" } : judge(day, mer, mn, mx, adv?.max);
+    const v = j === iKcal ? { dayMin: null, dayMax: null, dayAdv: null, pct: NaN, status: "energy" }
+            : isInfo(j)   ? { dayMin: null, dayMax: null, dayAdv: null, pct: NaN, status: "info" }     // shown, never judged
+            : judge(day, mer, mn, mx, adv?.max);
     return { j, name, unit, min: mn, max: mx, adv, day, per1000, ...v, missing: miss[j] };
   });
   const missingFor = idxs => { const seen = new Map(); idxs.forEach(i => miss[i].forEach(m => seen.set(m.name, m))); return [...seen.values()]; };

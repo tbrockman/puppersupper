@@ -10,8 +10,12 @@ export const NUTS = [
  ["Folate","µg",54,null],["Choline","mg",340,null],["EPA+DHA","g",0.3,null], // 0.3 = common target, not AAFCO
  // appended later (saved and shared diets are positional, so new nutrients go on the end):
  ["Linoleic acid","g",2.8,null],["Alpha-linolenic acid","g",null,null],["Arachidonic acid","g",null,null],
- ["Polyunsaturated fat","g",null,null],["Niacin B3","mg",3.4,null],["Pantothenic acid B5","mg",3,null]
+ ["Polyunsaturated fat","g",null,null],["Niacin B3","mg",3.4,null],["Pantothenic acid B5","mg",3,null],
+ // for information only (5th element): no AAFCO requirement or maximum exists
+ ["Carbohydrate","g",null,null,"info"],["Sugars","g",null,null,"info"]
 ];
+/** true for a row shown for information only, with nothing to judge it against */
+export const isInfo = j => NUTS[j][4]==="info";
 export const iKcal=0, iCa=3, iP=4;
 const at = name => NUTS.findIndex(n => n[0]===name);
 export const iVitE=at("Vitamin E"), iEPA=at("EPA+DHA"), iLA=at("Linoleic acid"), iALA=at("Alpha-linolenic acid"),
@@ -21,7 +25,7 @@ export const DISPLAY = ["Energy","Protein","Fat","Linoleic acid","EPA+DHA",
   "Calcium","Phosphorus","Sodium","Potassium","Magnesium","Iron","Zinc",
   "Vitamin A","Vitamin D","Vitamin E","Thiamin B1","Riboflavin B2","Niacin B3","Vitamin B6","Vitamin B12","Folate","Pantothenic acid B5","Choline",
   "Iodine","Selenium","Copper","Manganese",
-  "Alpha-linolenic acid","Arachidonic acid","Polyunsaturated fat"].map(at);
+  "Alpha-linolenic acid","Arachidonic acid","Polyunsaturated fat","Carbohydrate","Sugars"].map(at);
 if(DISPLAY.length!==NUTS.length || DISPLAY.includes(-1)) throw new Error("DISPLAY does not match NUTS");
 
 /* ---------- advisory upper levels for nutrients AAFCO leaves open-ended ---------- */
@@ -55,7 +59,37 @@ export const SOURCES = {
                url: "https://www.merckvetmanual.com/toxicology/selenium-toxicosis/selenium-toxicosis-in-animals" },
   merckFOD:  { title: "Merck Veterinary Manual: Fibrous Osteodystrophy in Animals",
                url: "https://www.merckvetmanual.com/musculoskeletal-system/dystrophies-associated-with-calcium-phosphorus-and-vitamin-d/fibrous-osteodystrophy-in-animals" },
+  merckFood: { title: "Merck Veterinary Manual: Food Hazards",
+               url: "https://www.merckvetmanual.com/special-pet-topics/poisoning/food-hazards" },
+  aspca:     { title: "ASPCA Animal Poison Control: People Foods to Avoid Feeding Your Pets",
+               url: "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
 };
+
+/**
+ * Foods and ingredients known to harm dogs. `match` is tested against a food's
+ * name, its source note and (for USDA branded foods, at the moment they are
+ * added) the ingredient list. `why` is paraphrased from the linked source.
+ */
+export const HAZARDS = [
+  { match: /\b(grapes?|raisins?|sultanas?|currants?|tamarinds?)\b/i, what: "grapes, raisins, sultanas, currants and tamarind",
+    why: "Can cause kidney injury and failure in dogs; the cause is thought to be tartaric acid, and as little as one grape or raisin per 4.5 kg of body weight may be enough.", src: "merckFood" },
+  { match: /\b(xylitol|birch sugar|E967)\b/i, what: "xylitol",
+    why: "A sugar-free sweetener (gum, sweets, some peanut butters and baked goods). In dogs it causes a rapid, severe drop in blood sugar at low doses and liver failure at high doses.", src: "merckFood" },
+  { match: /\b(chocolate|cocoa|cacao)\b/i, what: "chocolate and cocoa",
+    why: "Theobromine and caffeine cause heart-rhythm and nervous-system disturbances; about 28 g of milk chocolate per kg of body weight can be fatal, and dark or baking chocolate is far stronger.", src: "merckFood" },
+  { match: /\b(onions?|garlic|leeks?|chives?|shallots?|scallions?|spring onions?)\b/i, what: "onion, garlic, leek, chive and shallot",
+    why: "Raw, cooked, dried or powdered, these damage red blood cells and can cause anaemia, as well as stomach upset.", src: "aspca" },
+  { match: /\bmacadamia/i, what: "macadamia nuts",
+    why: "Dogs are the only species known to be affected: within 12 hours they may vomit and become weak, depressed and uncoordinated, with tremors and fever.", src: "merckFood" },
+  { match: /\b(alcohol|beer|wine|liquor|spirits|vodka|whisk(?:e)?y|rum|gin)\b/i, what: "alcohol",
+    why: "Causes vomiting, diarrhoea, incoordination, depressed breathing, tremors and can be fatal.", src: "aspca" },
+  { match: /\b(coffee|caffeine|espresso|energy drink)\b/i, what: "coffee and caffeine",
+    why: "Causes vomiting, diarrhoea, panting, excessive thirst and urination, hyperactivity, abnormal heart rhythm and tremors.", src: "aspca" },
+  { match: /\b(raw|unbaked|bread|pizza)\s+dough\b|\byeast dough\b/i, what: "raw yeast dough",
+    why: "The dough rises in the warm stomach, distending it and producing alcohol as the yeast ferments.", src: "merckFood" },
+  { match: /\bavocado/i, what: "avocado",
+    why: "Contains persin; dogs are less sensitive than birds and rabbits, but it can still cause vomiting and diarrhoea, and the stone is a choking and obstruction risk.", src: "aspca" },
+];
 
 /**
  * What sustained excess or shortfall looks like, and which breeds a nutrient
@@ -98,6 +132,8 @@ export const PURPOSE = {
   "Alpha-linolenic acid": "The plant omega-3. AAFCO sets no adult minimum for it, but it counts towards the omega-6 : omega-3 balance in the quick checks, which must stay at or under 30:1.",
   "Arachidonic acid": "An omega-6 from animal fat. No adult minimum, but it is added to linoleic acid on the omega-6 side of the omega-6 : omega-3 balance.",
   "Polyunsaturated fat": "Total polyunsaturated fat. No minimum of its own; the vitamin E : PUFA quick check needs it, since vitamin E is used up protecting these fats.",
+  "Carbohydrate": "For information only. Dogs have no dietary requirement for carbohydrate, and AAFCO, the NRC and FEDIAF set neither a minimum nor a maximum. It is what is left of the calories after protein and fat.",
+  "Sugars": "For information only. No published upper limit exists for sugar in dogs; the concerns are calories, teeth and loose stools, and with sugar-free products the sweetener xylitol, which is toxic to dogs.",
 };
 export const ADVISORY = {
   Copper:    { max: 7,    basis: "the EU legal maximum for complete dog food, 28 mg/kg dry matter",
@@ -136,6 +172,9 @@ export const DEFAULT_TITLE = "pupper supper";
 export const usdaId = src => +(/USDA (?:FDC )?(\d+)/.exec(src||"")||[])[1] || null;
 
 export function newId(){ return Math.random().toString(36).slice(2); }
+
+/** Hazards that a food's name or source note trips. */
+export const hazardsOf = it => HAZARDS.filter(h => h.match.test(`${it.name} ${it.src||""}`));
 
 /* ---------- built-in ingredients, for the example diet ---------- */
 import { BUNDLED } from "./bundled.js";
@@ -189,17 +228,17 @@ export const EXAMPLE = {
  f(`Mixed veg: ${MIXED_VEG.map(n=>n.split(",")[0].toLowerCase()).join(", ")}`,"500*2/10","g","day",...withEst(meanOf(MIXED_VEG), `~mean of ${MIXED_VEG.length} built-ins · 500 g per batch`, {Iodine:1})),
  f("Green beans","250*2/10","g","day",...fromBundle("Green beans, raw","250 g per batch",{Iodine:.5})),
  f("Calcium carbonate powder","1","g","day","40% elemental calcium",
-   [0,0,0,40000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+   [0,0,0,40000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
  f("Carna4 Chicken kibble","2*116","g","day","Carna4 guaranteed analysis · 2 cups × 116 g · 500 kcal/cup",
-   [430,29,15,1300,1000,800,330,130,12,19,1.4,2.6,80,220,1600,110,34,.70,.61,.76,22,100,190,1.08,2.5,.3,.05,3,8,2]),
+   [430,29,15,1300,1000,800,330,130,12,19,1.4,2.6,80,220,1600,110,34,.70,.61,.76,22,100,190,1.08,2.5,.3,.05,3,8,2,38,3]),
  f("Kirkland wet pâté","374","g","week","~complete food at AAFCO minimums · one 374 g can",
-   [110,9,6,250,200,165,60,17,1.1,2.2,.2,.14,9,28,138,14,1.4,.06,.14,.04,.8,6,37,0,.6,.08,.03,.8,1.5,.5]),
+   [110,9,6,250,200,165,60,17,1.1,2.2,.2,.14,9,28,138,14,1.4,.06,.14,.04,.8,6,37,0,.6,.08,.03,.8,1.5,.5,3,.5]),
  f("Cesar wet tray","100","g","week","~complete food at AAFCO minimums · one 100 g tray",
-   [90,8,4,200,160,135,50,14,.9,1.8,.16,.11,7,23,113,11,1.1,.05,.12,.03,.6,5,31,0,.5,.06,.02,.7,1.2,.4]),
+   [90,8,4,200,160,135,50,14,.9,1.8,.16,.11,7,23,113,11,1.1,.05,.12,.03,.6,5,31,0,.5,.06,.02,.7,1.2,.4,3,.5]),
  f("Beef chew stick","2*20","g","week","~estimate · 2 sticks × 20 g",
-   [300,65,4,50,150,100,200,10,2,3,.1,.02,20,5,0,0,.2,.02,.1,.1,1,5,30,0,.3,.05,.05,.4,5,.6]),
+   [300,65,4,50,150,100,200,10,2,3,.1,.02,20,5,0,0,.2,.02,.1,.1,1,5,30,0,.3,.05,.05,.4,5,.6,4,1]),
  f("Duck stick","2*8","g","week","~estimate · 2 sticks × 8 g",
-   [330,55,10,30,300,300,300,20,4,3,.2,.05,20,5,100,10,.3,.1,.3,.4,1,10,80,0,1.5,.1,.1,2,6,1.5]),
+   [330,55,10,30,300,300,300,20,4,3,.2,.05,20,5,100,10,.3,.1,.3,.4,1,10,80,0,1.5,.1,.1,2,6,1.5,5,1]),
  f("Freeze-dried beef liver bites","35","g","week","~freeze-dried beef liver · 35 × 1 g bites",
-   [350,70,12,18,1300,1100,240,63,17,14,34,1.1,140,30,58000,170,2.5,.7,9.7,3.7,200,1000,1150,0,1,.05,.9,2,39,21]),
+   [350,70,12,18,1300,1100,240,63,17,14,34,1.1,140,30,58000,170,2.5,.7,9.7,3.7,200,1000,1150,0,1,.05,.9,2,39,21,4,1]),
 ]};

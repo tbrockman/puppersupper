@@ -23,20 +23,9 @@
         <button role="menuitem" id="new"><i data-icon="file-plus"></i>New empty diet</button>
         <button role="menuitem" id="reset"><i data-icon="book"></i>Load the example diet</button>
         <div class="sep" role="separator"></div>
-        <button role="menuitem" id="keybtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="keypop"><i data-icon="key"></i><span>USDA API key</span></button>
         <a role="menuitem" id="source" href="https://github.com/tbrockman/puppersupper" target="_blank" rel="noopener"><i data-icon="code"></i>Source on GitHub <i data-icon="external" data-size="12"></i></a>
         <div class="sep" role="separator"></div>
         <p class="fine" role="note"><i data-icon="alert" data-size="13"></i><span>Vibe-coded software. Calculations and food data are unverified; this is not veterinary advice.</span></p>
-      </div>
-      <div id="keypop" class="keypop" role="dialog" aria-label="USDA API key" hidden>
-        <p>Searching USDA FoodData Central needs an API key. Without one the app uses USDA’s public demo key, which allows about 10 requests an hour for everyone on your network. Built-in ingredients never need a key.</p>
-        <label for="apikey">Your key</label>
-        <!-- a plain text field: a password field here makes Firefox treat the search box as a login form -->
-        <input type="text" id="apikey" name="usda-api-key" placeholder="paste it here" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
-        <div class="row">
-          <label class="sharekey" title="Append the key to links copied from the menu, so the recipient can search USDA too"><input type="checkbox" id="sharekey" disabled> include it in shared links</label>
-          <a href="https://fdc.nal.usda.gov/api-key-signup" target="_blank" rel="noopener">get a free key <i data-icon="external" data-size="12"></i></a>
-        </div>
       </div>
     </div>
   </h1>
@@ -47,7 +36,18 @@
   <h2><span>Diet</span> <span class="note">how they chow, converted to grams per day</span></h2>
   <div class="tscroll"><table id="tbl-foods"></table></div>
   <div id="results" role="listbox" hidden></div>
-  <p class="footnote">Type in the last row to search built-in ingredients and USDA FoodData Central, or to add a food of your own.
+  <div id="keypop" class="keypop" role="dialog" aria-label="USDA API key" hidden>
+        <p>Searching USDA FoodData Central needs an API key. Without one the app uses USDA’s public demo key, which allows about 10 requests an hour for everyone on your network. Built-in ingredients never need a key.</p>
+        <label for="apikey">Your key</label>
+        <!-- a plain text field: a password field here makes Firefox treat the search box as a login form -->
+        <input type="text" id="apikey" name="usda-api-key" placeholder="paste it here" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
+        <div class="row">
+          <label class="sharekey" title="Append the key to links copied from the menu, so the recipient can search USDA too"><input type="checkbox" id="sharekey" disabled> include it in shared links</label>
+          <a href="https://fdc.nal.usda.gov/api-key-signup" target="_blank" rel="noopener">get a free key <i data-icon="external" data-size="12"></i></a>
+        </div>
+      </div>
+  <p class="footnote">Type in the first row to search built-in ingredients and USDA FoodData Central, or to add a food of your own;
+  edit a food’s name to rename it or replace it with a search result.
   The amount field takes simple math, handy for batches: <code>400*2/10</code> is 400 g in a
   10-cup batch fed 2 cups a day. Pick a unit and how often it is fed; everything is converted to grams per day.
   Values per 100 g come from USDA FoodData Central, manufacturers, or estimates (marked ~). Changes are saved in
@@ -76,7 +76,7 @@
     <thead><tr><th>Check</th><th class="c-range">Range</th><th>Status</th></tr></thead>
     <tbody></tbody>
   </table></div>
-  <p class="footnote">Most nutrients have no AAFCO maximum: “no max” marks the open end of a range, and being well
+  <p class="footnote">Most nutrients have no AAFCO maximum: a “–” in the maximum’s place marks an open-ended range, and being well
   above a minimum is normal for complete foods. Where another published upper figure exists (EU legal limits, NRC,
   FEDIAF) it appears as an underlined number; hover it for the reasoning and source, and a diet above it reads
   “above advisory level”. When the calories are short, most nutrients will be too: feed more before adding

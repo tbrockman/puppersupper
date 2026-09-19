@@ -136,7 +136,7 @@ test("a complete food fed to the energy need passes everything; the same food un
   const gramsFor = frac => (mer * frac / 400) * 100;
   const at = analyze(diet([food("complete", gramsFor(1), "g", "day", per100)]));
   assert.equal(at.energy, "ok"); near(at.ePct, 1);
-  for (const r of at.rows) if (r.j !== iKcal) {
+  for (const r of at.rows) if (r.j !== iKcal && r.status !== "info") {
     if (r.min != null) { near(r.pct, 1.5, 1e-9, r.name); near(r.per1000 / r.min, 1.5, 1e-9, r.name); }
     assert.equal(r.status, "ok", r.name);
   }
@@ -183,7 +183,7 @@ test("only calcium in the bowl: ratio is infinite and calcium is judged against 
 test("without a weight nothing can be judged", () => {
   const a = analyze(diet([food("beef", 100, "g", "day", bundled("Beef, ground, 95% lean, raw").per100)], 0));
   assert.equal(a.mer, 0); assert.ok(Number.isNaN(a.ePct)); assert.equal(a.energy, "unknown");
-  for (const r of a.rows) if (r.j !== iKcal) { assert.equal(r.status, "unknown"); assert.equal(r.dayMin, null); }
+  for (const r of a.rows) if (r.j !== iKcal && r.status !== "info") { assert.equal(r.status, "unknown"); assert.equal(r.dayMin, null); }
   near(a.rows[idx("Protein")].per1000, 156.277, 1e-4);   // density is still reported
 });
 
@@ -192,7 +192,8 @@ test("the built-in example diet meets the profile for the dog it was written for
   const a = analyze();
   assert.equal(a.energy, "ok");
   assert.ok(a.caP >= 1 && a.caP <= 2);
-  for (const r of a.rows) if (r.j !== iKcal) assert.equal(r.status, "ok", `${r.name}: ${r.status} ${(100 * r.pct).toFixed(0)}%`);
+  for (const r of a.rows) if (r.j !== iKcal && r.status !== "info") assert.equal(r.status, "ok", `${r.name}: ${r.status} ${(100 * r.pct).toFixed(0)}%`);
+  assert.equal(a.rows[NUTS.findIndex(n => n[0] === "Sugars")].status, "info");
 });
 
 test("the AAFCO table is the 2016 adult-maintenance profile per 1,000 kcal", () => {
@@ -205,7 +206,8 @@ test("the AAFCO table is the 2016 adult-maintenance profile per 1,000 kcal", () 
   assert.deepEqual(byName["Linoleic acid"], { u: "g", mn: 2.8, mx: null });
   assert.deepEqual(byName["Niacin B3"], { u: "mg", mn: 3.4, mx: null });
   assert.deepEqual(byName["Pantothenic acid B5"], { u: "mg", mn: 3, mx: null });
-  assert.equal(NUTS.length, 30);
+  assert.equal(NUTS.length, 32);
+  assert.deepEqual(NUTS.filter(n => n[4] === "info").map(n => n[0]), ["Carbohydrate", "Sugars"]);
   assert.equal(NUTS[iKcal][0], "Energy"); assert.equal(NUTS[iCa][0], "Calcium"); assert.equal(NUTS[iP][0], "Phosphorus");
   assert.deepEqual([...DISPLAY].sort((a, b) => a - b), NUTS.map((_, j) => j), "DISPLAY is a permutation of the table");
   for (const f of EXAMPLE.foods) assert.equal(f.per100.length, NUTS.length, f.name);
@@ -312,13 +314,27 @@ test("backfill fills only blanks, from a built-in matched by USDA id or by name,
     { name: "egg, whole, raw", amount: "50", unit: "g", per: "day", src: "typed in", per100: old24 },
     { name: "Mystery treat", amount: "10", unit: "g", per: "day", src: "~estimate", per100: old24 },
   ]);
-  assert.ok(st.foods.every(f => f.per100.slice(24).every(v => v === null)), "the six added nutrients start unknown");
+  assert.ok(st.foods.every(f => f.per100.slice(24).every(v => v === null)), "the added nutrients start unknown");
   const n = backfill(st);
-  assert.equal(n, 12, "six values for each of the two matched foods");
+  assert.equal(n, 2 * (NUTS.length - 24), "every added value for each of the two matched foods");
   for (const f of st.foods.slice(0, 2)) {
     assert.deepEqual(f.per100.slice(24), egg.per100.slice(24));
     assert.equal(f.per100[1], 99, "the hand-edited protein is kept");
   }
   assert.ok(st.foods[2].per100.slice(24).every(v => v === null), "an unrecognised food is left alone");
   assert.equal(backfill(st), 0, "nothing left to fill");
+});
+
+/* ---------- known hazards ---------- */
+test("known hazards are matched on a food's name or source note, and each cites a source", async () => {
+  const { HAZARDS, hazardsOf, SOURCES } = await import("../src/data.js");
+  for (const h of HAZARDS) assert.ok(h.what && h.why && SOURCES[h.src]?.url.startsWith("https://"), h.what);
+  const hit = (name, src = "") => hazardsOf({ name, src }).map(h => h.what);
+  assert.deepEqual(hit("Grapes, red, raw"), ["grapes, raisins, sultanas, currants and tamarind"]);
+  assert.deepEqual(hit("Trail mix", "contains raisins and chocolate chips"), ["grapes, raisins, sultanas, currants and tamarind", "chocolate and cocoa"]);
+  assert.deepEqual(hit("Peanut butter, sugar-free", "ingredients list: peanuts, xylitol"), ["xylitol"]);
+  assert.deepEqual(hit("Garlic powder"), ["onion, garlic, leek, chive and shallot"]);
+  assert.deepEqual(hit("Whipped cream"), []);
+  assert.deepEqual(hit("Grapefruit"), [], "a word that merely contains a hazard's name is not a match");
+  assert.deepEqual(hit("Doughnut"), []);
 });
