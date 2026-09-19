@@ -16,7 +16,7 @@ const opts = (obj, sel) => Object.keys(obj).map(k=>`<option value="${k}" ${k===s
 const adder = document.createElement("tr"); adder.className = "adder";
 adder.innerHTML = `<td class="foodname">${editable({ value:"", cls:"q", fit:false, label:"Search", placeholder:"type an ingredient, e.g. sardines",
     attrs:`id="q" aria-label="Search ingredients or add a food" role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list"` })}</td>
-  <td class="num amount">${editable({ value:"100", cls:"amt", attrs:`disabled aria-hidden="true" tabindex="-1"`, label:"" })}</td>
+  <td class="num amount">${editable({ value:"100", cls:"amt", fit:false, attrs:`disabled aria-hidden="true" tabindex="-1"`, label:"" })}</td>
   <td><select disabled aria-hidden="true" tabindex="-1">${opts(UNITS, "g")}</select></td>
   <td><select disabled aria-hidden="true" tabindex="-1">${opts(PERIODS, "day")}</select></td>
   <td class="num gday fill">\u2013</td>

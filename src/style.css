@@ -102,8 +102,9 @@ td select{max-width:5.5rem;border: none;background: initial;}
 .notefield .edit .edit-in{margin:0; padding:.12rem .3rem; background:#fff; min-width:12ch}
 .edhead{margin:.6rem 0 .3rem; font-weight:600}
 td.amount .edit-in, #tbl-in td.num .edit-in{margin:0 -.3rem 0 0} /* right-aligned numbers: pull the padding back on the right instead, so digits end under the heading */
-td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums} /* hugs its text (mirror-sized) so the handle sits snug beside it */
-td.amount .edit{max-width:7.5rem}
+/* the amount field takes the column's width rather than hugging its text, so a longer formula does not move
+   the layout; right-aligned, its digits end at the field's edge, where the handle sits */
+td.amount .edit{width:100%} td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums}
 /* room to the right of a number for its handle, on the header too so the digits still end under the heading */
 th.amount, td.amount, #tbl-in th.value, #tbl-in td.num{padding-right:1.7rem}
 input.bad, td.bad{color:var(--brick)}
@@ -290,7 +291,7 @@ tr.okrow td.status{color:var(--moss)}
   .edit-pen{display:none}
   #tbl-foods{min-width:32rem}
   .foodname{min-width:9rem; max-width:12rem}
-  td.amount .edit{max-width:5.5rem}
+  td.amount .edit-in{min-width:4.5rem}
   .strip{min-width:4rem}
   .footnote{max-width:none}
 }

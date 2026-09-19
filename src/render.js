@@ -27,7 +27,7 @@ function foodRow(it){
   const hazard = hz.length ? `<span class="info hazard" tabindex="0" role="note" data-tip="${esc(`Known to harm dogs: ${hz.map(h=>h.what).join("; ")}. ${hz.map(h=>h.why).join(" ")}`)}" data-src="${esc(SOURCES[hz[0].src].url)}" data-src-title="${esc(SOURCES[hz[0].src].title)}">${icon("alert",14)}</span>` : "";
   return `<tr data-id="${esc(it.id)}" class="${open?"open":""}${hz.length?" hazardous":""}">
     <td class="foodname">${hazard}${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}</td>
-    <td class="num amount">${editable({ value:it.amount, cls:"amt", inputCls:bad?"bad":"", attrs:`inputmode="decimal" data-f="amount" aria-label="${esc(it.name)} amount"`, label:"Edit amount" })}</td>
+    <td class="num amount">${editable({ value:it.amount, cls:"amt", fit:false, inputCls:bad?"bad":"", attrs:`inputmode="decimal" data-f="amount" aria-label="${esc(it.name)} amount"`, label:"Edit amount" })}</td>
     <td><select data-f="unit" aria-label="unit">${opts(UNITS, it.unit)}</select></td>
     <td><select data-f="per" aria-label="per">${opts(PERIODS, it.per)}</select></td>
     <td class="num gday ${bad?"bad":""}">${gramsText(it)}</td>
