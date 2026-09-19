@@ -132,7 +132,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #results .dt{color:var(--ink-soft); font-size:.7rem; white-space:nowrap}
 #results .msg{padding:.35rem .6rem .15rem; color:var(--ink-soft); font-size:.7rem}
 #results .sep{height:1px; background:var(--rule); margin:.3rem .4rem}
-#results .keymsg{display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.3rem; padding:.4rem .6rem;
+#results .keymsg{display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; margin-bottom:.3rem; padding:.4rem .6rem;
   background:var(--wash); border-radius:3px}
 #results .keymsg button{padding:.15rem .5rem; font-size:.72rem}
 /* problems: one dismissable card under the search box, and a log of past ones */
