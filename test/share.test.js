@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { encodeRecipe, decodeRecipe, readHash, buildHash } from "../src/share.js";
 import { EXAMPLE, NUTS } from "../src/data.js";
-import { sanitize, setState, totals, gramsPerDay, weightKg, S } from "../src/state.js";
+import { sanitize, setState, totals, gramsPerDay, weightKg, backfill, S } from "../src/state.js";
 
 const strip = s => ({ ...s, foods: s.foods.map(({ id, ...rest }) => rest) });
 
@@ -13,8 +13,27 @@ test("recipe survives a URL round trip", async () => {
   const { recipe, key } = readHash(hash);
   assert.equal(recipe, enc);
   assert.equal(key, "abc=123");
-  const back = sanitize(await decodeRecipe(recipe));
+  const back = sanitize(await decodeRecipe(recipe)); backfill(back);
   assert.deepEqual(strip(back), strip(EXAMPLE));
+});
+
+test("a food whose values match a built-in travels without them; edited values still travel", async () => {
+  const { BUNDLED } = await import("../src/bundled.js");
+  const egg = BUNDLED.find(b => b.name === "Egg, whole, raw");
+  const edited = egg.per100.slice(); edited[1] = 99;
+  const d = sanitize({ foods: [
+    { name: "Eggs", amount: "60", src: egg.src, per100: egg.per100.slice() },          // by USDA id
+    { name: "Egg, whole, raw", amount: "50", src: "typed", per100: egg.per100.slice() }, // by name
+    { name: "Eggs", amount: "60", src: egg.src, per100: edited },                       // edited: not a copy
+  ]});
+  const raw = await decodeRecipe(await encodeRecipe(d));
+  assert.ok(raw.foods[0].per100.every(v => v === null) && raw.foods[1].per100.every(v => v === null), "copies travel without values");
+  assert.equal(raw.foods[2].per100[1], 99, "an edited food keeps its values");
+  const back = sanitize(raw); backfill(back);
+  assert.deepEqual(back.foods[0].per100, egg.per100); assert.deepEqual(back.foods[1].per100, egg.per100); assert.equal(back.foods[2].per100[1], 99);
+  const full = await encodeRecipe(sanitize({ foods: [{ name: "Eggs", amount: "60", src: egg.src, per100: edited }] }));
+  const light = await encodeRecipe(sanitize({ foods: [{ name: "Eggs", amount: "60", src: egg.src, per100: egg.per100.slice() }] }));
+  assert.ok(light.length < full.length * 0.6, `${light.length} vs ${full.length}`);
 });
 
 test("encoded example fits comfortably in a URL", async () => {

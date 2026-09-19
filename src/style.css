@@ -93,7 +93,7 @@ td.num, th.num{text-align:right}
 td select{max-width:5.5rem;border: none;background: initial;}
 .gday{color:var(--ink-soft); white-space:nowrap}
 .src{font-size:.68rem; color:var(--ink-soft)}
-.foodname{max-width:16rem; min-width:10rem}
+.foodname{max-width:26rem; min-width:10rem} /* room for a USDA description before it is shortened */
 /* note field in the nutrient panel: same label-over-input look as the nutrient cells */
 /* the note: a field that hugs its text (mirror-sized), under a label whose rule spans exactly that width */
 .notefield{display:inline-flex; flex-direction:column; align-items:stretch; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem; max-width:34rem}
@@ -125,6 +125,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #results[hidden]{display:none}
 #results .opt{padding:.4rem .6rem; border-radius:3px; display:flex; gap:.6rem; align-items:center; cursor:pointer}
 #results .opt > span:first-child{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+#results .opt.active > span:first-child{white-space:normal} /* the highlighted result shows its whole name */
 #results .opt .ico{opacity:0}
 #results .opt.active{background:var(--ink); color:var(--bone)}
 #results .opt.active .dt{color:var(--rule)}

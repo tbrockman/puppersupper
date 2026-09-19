@@ -9,20 +9,30 @@
  *   v1: [1, weight, activity, batchCups, cupsPerDay, [[name,cat,mode,qty,unit,gPerUnit,src,per100]]]
  *   v2: [2, title, weight, activity, [[name,kind,amount,src,per100]] (kind is ignored now)]
  *   v3: [3, title, weight, activity, [[name,amount,unit,per,src,per100]], weightUnit?]
+ *   v4: as v3, but per100 is null for a food whose values are exactly those of
+ *       a built-in ingredient (matched by USDA id or name); backfill() restores
+ *       them on load. Nutrients are two thirds of a link, and most are copies.
  * decodeRecipe returns the *raw* object shape; run it through sanitize(),
  * which also migrates v1 recipes.
  */
-import { NUTS } from "./data.js";
+import { NUTS, usdaId } from "./data.js";
+import { BUNDLED } from "./bundled.js";
 
-const VERSION = 3;
+const VERSION = 4;
 const PARAM = "r";
 const KEY_PARAM = "key";
 
 /* ---- compact positional form ---- */
 const r3 = v => v==null ? null : Math.round(v*1000)/1000; // 3 dp is plenty for nutrients; null = unknown
+/** the built-in this food is a copy of, if its values match one exactly */
+function asBundled(x){
+  const id = usdaId(x.src), name = x.name.trim().toLowerCase();
+  const b = BUNDLED.find(b=> (id && usdaId(b.src)===id) || b.name.toLowerCase()===name);
+  return b && b.per100.every((v,j)=> r3(v)===r3(x.per100[j])) ? b : null;
+}
 function pack(S){
   return [VERSION, S.title, S.weight, S.activity,
-    S.foods.map(x=>[x.name, x.amount, x.unit, x.per, x.src, x.per100.map(r3)]), S.weightUnit];
+    S.foods.map(x=>[x.name, x.amount, x.unit, x.per, x.src, asBundled(x) ? null : x.per100.map(r3)]), S.weightUnit];
 }
 function unpack(a){
   if(!Array.isArray(a)) throw new Error("unknown recipe format");
@@ -35,7 +45,7 @@ function unpack(a){
     title:a[1], weight:a[2], activity:a[3],
     foods: a[4].map(x=>({ name:x[0], amount:x[2], src:x[3], per100:per100(x[4]) })),
   };
-  if(a[0]===3 && Array.isArray(a[4])) return {
+  if((a[0]===3 || a[0]===4) && Array.isArray(a[4])) return {
     title:a[1], weight:a[2], activity:a[3], weightUnit:a[5],
     foods: a[4].map(x=>({ name:x[0], amount:x[1], unit:x[2], per:x[3], src:x[4], per100:per100(x[5]) })),
   };

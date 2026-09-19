@@ -188,9 +188,6 @@ const withEst = (per100, src, est={}) => {
 };
 /** [source note with an extra remark, per-100 g values] of a built-in, in the order f() takes them */
 const fromBundle = (name, note, est) => withEst(bundled(name).per100.slice(), `${bundled(name).src} · ${note}`, est);
-/** the mean of several built-ins (an unreported value in any of them makes the mean unreported) */
-const meanOf = names => names.map(bundled).reduce((acc,b)=> acc.map((v,j)=> v==null || b.per100[j]==null ? null : v + b.per100[j]/names.length), NUTS.map(()=>0))
-  .map(v=> v==null ? null : Math.round(v*1000)/1000);
 
 /**
  * Build a food item.
@@ -214,19 +211,18 @@ export const EMPTY = { title: DEFAULT_TITLE, weight: 20, weightUnit: "kg", activ
    USDA-sourced items take their values from the built-in table (src/bundled.js), so refreshing the bundle
    refreshes them; what USDA never reports (iodine, and a few others) is estimated and said so in the source
    note. The branded foods and treats are hand-typed estimates (marked ~). */
-const MIXED_VEG = ["Carrots, raw", "Peas, green, cooked", "Green beans, raw", "Corn, sweet, raw"].filter(n=> BUNDLED.some(b=>b.name===n));
 export const EXAMPLE = {
  title: DEFAULT_TITLE, weight:23, weightUnit:"kg", activity:2.4,
  foods:[
  f("Canned pumpkin","400*2/10","g","day",...fromBundle("Pumpkin, canned","400 g per batch",{Iodine:1})),
  f("Sweet potato, peeled","860*2/10","g","day",...fromBundle("Sweet potato, raw","860 g per batch",{Iodine:1})),
- f("Chicken liver","133*2/10","g","day",...fromBundle("Chicken liver, raw","133 g per batch",{Iodine:10})),
- f("Chicken hearts","133*2/10","g","day",...fromBundle("Chicken heart, raw","133 g per batch",{Iodine:4,"Vitamin D":0,"Vitamin E":1,Choline:194})),
+ f("Chicken liver","133*2/10","g","day",...fromBundle("Chicken liver, cooked","133 g per batch",{Iodine:10})),
+ f("Chicken hearts","133*2/10","g","day",...fromBundle("Chicken heart, cooked","133 g per batch",{Iodine:4,"Vitamin D":0,"Vitamin E":1,Choline:194})),
  f("Extra-lean ground beef (95%)","454*2/10","g","day",...fromBundle("Beef, ground, 95% lean, raw","454 g per batch",{Iodine:3})),
- f("Large eggs","6*50*2/10","g","day",...fromBundle("Egg, whole, raw","6 eggs × 50 g per batch",{Iodine:50})),
- f("Jasmine rice, dry","139*2/10","g","day",...fromBundle("Rice, white, dry","¾ cup dry per batch",{Iodine:1})),
- f(`Mixed veg: ${MIXED_VEG.map(n=>n.split(",")[0].toLowerCase()).join(", ")}`,"500*2/10","g","day",...withEst(meanOf(MIXED_VEG), `~mean of ${MIXED_VEG.length} built-ins · 500 g per batch`, {Iodine:1})),
- f("Green beans","250*2/10","g","day",...fromBundle("Green beans, raw","250 g per batch",{Iodine:.5})),
+ f("Large eggs","6*50*2/10","g","day",...fromBundle("Egg, whole, raw (Foundation)","6 eggs × 50 g per batch",{Iodine:50})),
+ f("Jasmine rice","139*2/10","g","day",...fromBundle("Rice, white, cooked","139 g per batch",{Iodine:1})),
+ f("Mixed vegetables","500*2/10","g","day",...fromBundle("Mixed vegetables, frozen","500 g per batch",{Iodine:1})),
+ f("Green beans","250*2/10","g","day",...fromBundle("Green beans, cooked","250 g per batch",{Iodine:.5})),
  f("Calcium carbonate powder","1","g","day","40% elemental calcium",
    [0,0,0,40000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
  f("Carna4 Chicken kibble","2*116","g","day","Carna4 guaranteed analysis · 2 cups × 116 g · 500 kcal/cup",

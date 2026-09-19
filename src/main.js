@@ -269,7 +269,8 @@ function placeResults(){
 }
 window.addEventListener("scroll", ()=>{ if(!resultsBox.hidden) placeResults(); }, { passive:true });
 window.addEventListener("resize", ()=>{ if(!resultsBox.hidden) placeResults(); });
-const opt = (attrs, label, meta) => `<div class="opt" role="option" ${attrs}><span>${label}</span><span class="dt">${meta}</span>${icon("plus",14)}</div>`;
+/* the full name is in the title, and the highlighted option wraps to show all of it */
+const opt = (attrs, label, meta) => `<div class="opt" role="option" title="${label.replace(/<[^>]+>/g,"")}" ${attrs}><span>${label}</span><span class="dt">${meta}</span>${icon("plus",14)}</div>`;
 const localOpts = (q, exclude=new Set()) => searchBundled(q).filter(b=> !exclude.has(bundledFdcId(b)))
   .map(b=> opt(`data-local="${b.i}"`, esc(b.name), `built-in · ${esc(b.src)}`)).join("");
 /** USDA hits remembered from earlier searches, minus any that are built in or already listed. */
