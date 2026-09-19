@@ -23,23 +23,11 @@
         <button role="menuitem" id="new"><i data-icon="file-plus"></i>New empty diet</button>
         <button role="menuitem" id="reset"><i data-icon="book"></i>Load the example diet</button>
         <div class="sep" role="separator"></div>
+        <button role="menuitem" id="keybtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="keypop"><i data-icon="key"></i><span>USDA API key</span></button>
         <a role="menuitem" id="source" href="https://github.com/tbrockman/puppersupper" target="_blank" rel="noopener"><i data-icon="code"></i>Source on GitHub <i data-icon="external" data-size="12"></i></a>
         <div class="sep" role="separator"></div>
         <p class="fine" role="note"><i data-icon="alert" data-size="13"></i><span>Vibe-coded software. Calculations and food data are unverified; this is not veterinary advice.</span></p>
       </div>
-    </div>
-  </h1>
-</header>
-
-<main>
-<section>
-  <h2><span>Diet</span> <span class="note">how they chow, converted to grams per day</span></h2>
-  <div class="searchbar">
-    <div class="qwrap">
-      <input type="text" id="q" placeholder="type an ingredient, e.g. sardines" aria-label="Search ingredients" autocomplete="off"
-        role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
-      <button type="button" id="keybtn" class="quiet iconbtn" title="USDA API key" aria-label="USDA API key" aria-haspopup="dialog" aria-expanded="false" aria-controls="keypop"><i data-icon="key"></i></button>
-      <div id="results" role="listbox" hidden></div>
       <div id="keypop" class="keypop" role="dialog" aria-label="USDA API key" hidden>
         <p>Searching USDA FoodData Central needs an API key. Without one the app uses USDA’s public demo key, which allows about 10 requests an hour for everyone on your network. Built-in ingredients never need a key.</p>
         <label for="apikey">Your key</label>
@@ -51,11 +39,16 @@
         </div>
       </div>
     </div>
-    <button id="go" title="Search USDA FoodData Central"><i data-icon="search"></i>Search USDA</button>
-    <button id="addfood" class="secondary" title="Add a food and type its nutrients yourself"><i data-icon="plus"></i>Custom food</button>
-  </div>
+  </h1>
+</header>
+
+<main>
+<section>
+  <h2><span>Diet</span> <span class="note">how they chow, converted to grams per day</span></h2>
   <div class="tscroll"><table id="tbl-foods"></table></div>
-  <p class="footnote">The amount field takes simple math, handy for batches: <code>400*2/10</code> is 400 g in a
+  <div id="results" role="listbox" hidden></div>
+  <p class="footnote">Type in the last row to search built-in ingredients and USDA FoodData Central, or to add a food of your own.
+  The amount field takes simple math, handy for batches: <code>400*2/10</code> is 400 g in a
   10-cup batch fed 2 cups a day. Pick a unit and how often it is fed; everything is converted to grams per day.
   Values per 100 g come from USDA FoodData Central, manufacturers, or estimates (marked ~). Changes are saved in
   this browser, and the address bar always links to the current diet.</p>

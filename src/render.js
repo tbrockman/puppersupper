@@ -40,12 +40,15 @@ function editorRow(it){
       return `<label class="${v==null?"unknown":""}"><span class="lt">${n[0]} ${n[1]} /100 g ${warn("Not reported; counts as 0. Type a value if you know it, or 0 if there is none.", 11)}</span><input type="number" step="any" min="0" value="${v==null?"":+(+v).toFixed(3)}" placeholder="${v==null?"not reported":""}" data-f="n" data-j="${j}" aria-label="${esc(n[0])} per 100 g${v==null?", not reported":""}"></label>`; }).join("")}
     </div></td></tr>`;
 }
+/** The table's last row: where foods are searched for and added. Created once by main.js and kept across re-renders. */
+let adderRow = null;
+export function setAdderRow(el){ adderRow = el; }
 export function renderFoods(){
   const head = `<thead><tr><th>Food</th><th class="num">Amount</th><th>Unit</th><th>Per</th><th class="num">g / day</th><th></th></tr></thead>`;
   const tbl = document.getElementById("tbl-foods");
-  tbl.innerHTML = head + "<tbody>" +
-    (S.foods.map(it=> foodRow(it) + (openEditors.has(it.id) ? editorRow(it) : "")).join("") ||
-     `<tr><td class="src" colspan="6">nothing yet — search above or add a custom food</td></tr>`) + "</tbody>";
+  const focused = adderRow && adderRow.contains(document.activeElement) ? document.activeElement : null;
+  tbl.innerHTML = head + "<tbody>" + S.foods.map(it=> foodRow(it) + (openEditors.has(it.id) ? editorRow(it) : "")).join("") + "</tbody>";
+  if(adderRow){ tbl.tBodies[0].appendChild(adderRow); focused?.focus({ preventScroll:true }); } // moving the node drops focus; give it back
   fitAll(tbl);
   document.querySelectorAll("input[data-g]").forEach(i=>{ if(+i.value !== S[i.dataset.g]) i.value = S[i.dataset.g]; });
   const wu = document.getElementById("g-weightUnit"); if(wu.value !== S.weightUnit) wu.value = S.weightUnit;

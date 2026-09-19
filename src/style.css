@@ -102,10 +102,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 @media (prefers-reduced-motion: reduce){ tr.flash td{animation:none} }
 
 /* ---------- ingredient search ---------- */
-.searchbar{display:flex; gap:.5rem; margin:.8rem 0 .4rem; flex-wrap:wrap}
-.qwrap{position:relative; flex:1 1 14rem; min-width:0; display:flex}
-.qwrap > input{width:100%}
-#results{position:absolute; left:0; right:0; top:calc(100% + .35rem); z-index:30; border:1px solid var(--rule); background:#fff;
+#results{position:fixed; z-index:30; overflow-y:auto; border:1px solid var(--rule); background:#fff;
   max-height:18rem; overflow:auto; font-size:.84rem; border-radius:4px; padding:.3rem;}
 #results[hidden]{display:none}
 #results .opt{padding:.4rem .6rem; border-radius:3px; display:flex; gap:.6rem; align-items:center; cursor:pointer}
@@ -131,14 +128,11 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #results .notice .row button{padding:.2rem .55rem; font-size:.78rem}
 #results .notice a{color:var(--moss); display:inline-flex; align-items:center; gap:.2rem}
 /* API key lives behind a key icon inside the search box */
-.qwrap input#q{padding-right:2.2rem}
-/* no key: a dim outline. key set: green, with a dot badge in the corner so the two states read at a glance */
-#keybtn{position:absolute; right:.25rem; top:50%; transform:translateY(-50%); color:var(--ink-soft); opacity:.5}
-#keybtn:hover, #keybtn:focus-visible, #keybtn[aria-expanded=true]{opacity:1; background:var(--wash)}
-#keybtn.on, #keybtn.on:hover{opacity:1; background:transparent; color:var(--moss)}
-#keybtn.on::after{content:""; position:absolute; right:1px; top:1px; width:8px; height:8px; border-radius:50%; background:var(--moss); border:1.5px solid #fff}
-#keybtn.on:hover{background:var(--wash)}
-.keypop{position:absolute; right:0; top:calc(100% + .35rem); z-index:32; width:min(24rem, 100%); background:#fff; border:1px solid var(--rule);
+/* the adder row: the search box sits where a food name would, the other cells show what a new food starts with */
+.adder td{border-bottom:none; padding-top:.35rem}
+.adder input#q{width:100%; min-width:12rem}
+.adder .fill{color:var(--ink-soft); opacity:.55}
+.keypop{position:absolute; right:0; top:2.1rem; z-index:36; width:24rem; max-width:calc(100vw - 2rem); text-align:left; font-weight:400; letter-spacing:0; font-size:.86rem; line-height:1.4; background:#fff; border:1px solid var(--rule);
   border-radius:4px; padding:.7rem .8rem; font-size:.8rem; color:var(--ink-soft)}
 .keypop[hidden]{display:none}
 .keypop p{margin:0 0 .6rem; line-height:1.45}
@@ -264,8 +258,6 @@ tr.okrow td.status{color:var(--moss)}
   .setup .note{margin-left:0; flex-basis:100%}
   .tscroll{margin-right:-.9rem; padding-right:.9rem; max-width:none}
   .edit-pen{display:none}
-  .searchbar .qwrap{flex-basis:100%}
-  .searchbar button{flex:1 1 auto; justify-content:center}
   #tbl-foods{min-width:32rem}
   .foodname{min-width:9rem; max-width:12rem}
   td.amount input{width:5rem}

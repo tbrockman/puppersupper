@@ -1,6 +1,6 @@
-import { EXAMPLE, EMPTY, WEIGHT_UNITS, blankFood, f } from "./data.js";
+import { EXAMPLE, EMPTY, WEIGHT_UNITS, NUTS, f } from "./data.js";
 import { S, setState, loadLocal, saveLocal, sanitize, backfill, store, weightKg, gramsPerDay } from "./state.js";
-import { renderFoods, renderAnalysis, toast, openEditors, esc, gramsText, initTooltips, badgeHtml, syncColumns } from "./render.js";
+import { renderFoods, renderAnalysis, toast, openEditors, esc, gramsText, initTooltips, badgeHtml, syncColumns, setAdderRow } from "./render.js";
 import { encodeRecipe, decodeRecipe, readHash, buildHash } from "./share.js";
 import { search, searchBundled, searchCached, bundledAt, bundledFdcId, nutrientsFor, setApiKey, DEMO_LIMIT, KEY_LIMIT, SIGNUP_URL } from "./fdc.js";
 import { icon, mountIcons } from "./icons.js";
@@ -15,7 +15,7 @@ initEditable();
 const keyBox = $("apikey"), shareKey = $("sharekey"), keyBtn = $("keybtn"), keyPop = $("keypop");
 function useKey(k){
   keyBox.value = k; setApiKey(k); store.set("lady.fdckey", k);
-  keyBtn.classList.toggle("on", !!k); keyBtn.title = k ? "USDA API key (set)" : "USDA API key";
+  keyBtn.classList.toggle("on", !!k); keyBtn.querySelector("span").textContent = k ? "USDA API key \u00b7 set" : "USDA API key";
   shareKey.disabled = !k;
   if(!k) shareKey.checked = false;
 }
@@ -29,6 +29,12 @@ function toggleKeyPop(show = keyPop.hidden){
 keyBtn.addEventListener("click", ()=> toggleKeyPop());
 document.addEventListener("click", e=>{ if(!e.target.closest("#keypop, #keybtn, [data-act=key]")) toggleKeyPop(false); });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !keyPop.hidden){ toggleKeyPop(false); keyBtn.focus(); } });
+/* the adder row: last row of the food table, holding the search box (created before the table first renders) */
+const adder = document.createElement("tr"); adder.className = "adder";
+adder.innerHTML = `<td class="foodname"><input type="text" id="q" placeholder="type an ingredient, e.g. sardines" aria-label="Search ingredients or add a food" autocomplete="off"
+    role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list"></td>
+  <td class="num fill">100</td><td class="fill">g</td><td class="fill">day</td><td class="num fill">\u2013</td><td></td>`;
+setAdderRow(adder);
 /* ---------- URL <-> state ---------- */
 let lastWritten = null;                 // encoded diet we last put in the address bar
 let syncTimer = null;
@@ -186,24 +192,6 @@ function addFood(it, msg){
   toast(msg);
   return row;
 }
-$("addfood").addEventListener("click", ()=>{
-  const it = blankFood(); openEditors.add(it.id);
-  const row = addFood(it, "Name it, set the amount, then type its nutrients per 100 g");
-  const n = row?.querySelector('input[data-f="name"]'); if(n){ n.focus(); n.select(); }
-});
-/* a tap on an analysis warning's tooltip: open the editors of the foods missing that nutrient and go to them */
-document.addEventListener("jump-to-missing", e=>{
-  const j = e.detail.j;
-  const hits = S.foods.filter(x=> x.per100[j]==null && gramsPerDay(x) > 0);
-  if(!hits.length) return;
-  hits.forEach(x=> openEditors.add(x.id));
-  renderFoods();
-  const rows = hits.map(x=> tbl.querySelector(`tr.editor[data-id="${x.id}"]`)).filter(Boolean);
-  rows.forEach(r=>{ r.classList.add("flash"); r.previousElementSibling?.classList.add("flash"); });
-  const first = rows[0]?.querySelector(`input[data-f="n"][data-j="${j}"]`);
-  if(first){ first.focus({ preventScroll:true }); first.closest("label")?.classList.add("flash"); }
-  rows[0]?.previousElementSibling?.scrollIntoView({ block:"start", behavior:"smooth" });
-});
 document.getElementById("tbl-in").addEventListener("input", e=>{
   if(e.target.id==="g-weightUnit"){
     const kg = weightKg();
@@ -237,7 +225,17 @@ function problem(err, below=""){
 }
 
 /* ---------- ingredient search: a floating listbox with keyboard navigation ---------- */
-const resultsBox = $("results"), qBox = $("q");
+const resultsBox = $("results"), qBox = adder.querySelector("#q");   // the adder row is not in the document until the table first renders
+/** put the results list under the search box (it is position:fixed so the table's scroll box cannot clip it) */
+function placeResults(){
+  const r = qBox.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize), vw = window.innerWidth;
+  const width = Math.min(Math.max(r.width, 28*rem), vw - 2*rem);
+  resultsBox.style.left = Math.max(rem, Math.min(r.left, vw - width - rem)) + "px";
+  resultsBox.style.top = (r.bottom + 4) + "px"; resultsBox.style.width = width + "px";
+  resultsBox.style.maxHeight = Math.max(8*rem, window.innerHeight - r.bottom - 2*rem) + "px";
+}
+window.addEventListener("scroll", ()=>{ if(!resultsBox.hidden) placeResults(); }, { passive:true });
+window.addEventListener("resize", ()=>{ if(!resultsBox.hidden) placeResults(); });
 const opt = (attrs, label, meta) => `<div class="opt" role="option" ${attrs}><span>${label}</span><span class="dt">${meta}</span>${icon("plus",14)}</div>`;
 const localOpts = (q, exclude=new Set()) => searchBundled(q).filter(b=> !exclude.has(bundledFdcId(b)))
   .map(b=> opt(`data-local="${b.i}"`, esc(b.name), `built-in · ${esc(b.src)}`)).join("");
@@ -250,6 +248,7 @@ function cachedOpts(q, exclude=new Set()){
   return hits.map(x=> opt(`data-cached="${esc(x.fdcId)}"`, `${esc(x.description)}${x.brandOwner?` — ${esc(x.brandOwner)}`:""}`, `remembered · USDA ${esc(x.fdcId)} (${esc(x.dataType)})`)).join("");
 }
 const usdaOpt = q => `<div class="opt usda" role="option" data-usda="1"><span>Search USDA for “${esc(q)}”</span><span class="dt">FoodData Central</span>${icon("search",14)}</div>`;
+const customOpt = q => `<div class="opt" role="option" data-custom="1"><span>Add custom food “${esc(q)}”</span><span class="dt">type its nutrients yourself</span>${icon("plus",14)}</div>`;
 /** Footer row of a USDA result list when no personal key is set: says which key was used and offers the popover. */
 const demoRow = ()=> keyBox.value.trim() ? "" :
   `<div class="msg keymsg"><span>Searched with USDA\u2019s shared demo key \u00b7 about ${DEMO_LIMIT} an hour for your whole network</span><button type="button" data-act="key">${icon("key",12)}Use your own key</button></div>`;
@@ -262,7 +261,7 @@ function setActive(i){
   os.forEach((o,k)=> o.classList.toggle("active", k===active));
   os[active].scrollIntoView({ block:"nearest" });
 }
-function open(html){ resultsBox.innerHTML = html; resultsBox.hidden = false; qBox.setAttribute("aria-expanded","true"); setActive(0); if(!keyPop.hidden) toggleKeyPop(false); }
+function open(html){ resultsBox.innerHTML = html; resultsBox.hidden = false; placeResults(); qBox.setAttribute("aria-expanded","true"); setActive(0); if(!keyPop.hidden) toggleKeyPop(false); }
 function close(){ resultsBox.hidden = true; qBox.setAttribute("aria-expanded","false"); active = -1; }
 function closeResults(){ close(); }
 function showLocal(){
@@ -270,8 +269,8 @@ function showLocal(){
   if(!q){ close(); return; }
   const exact = searchBundled(q).some(b=> b.name.toLowerCase()===q.toLowerCase());
   const local = localOpts(q) + cachedOpts(q);
-  // searching USDA is the default action unless the text names a built-in food exactly
-  open(exact ? local + usdaOpt(q) : usdaOpt(q) + local);
+  // searching USDA is the default action unless the text names a built-in food exactly; a custom food is always the last option
+  open((exact ? local + usdaOpt(q) : usdaOpt(q) + local) + customOpt(q));
 }
 async function doSearch(){
   const q=qBox.value.trim(); if(!q) return;
@@ -283,12 +282,22 @@ async function doSearch(){
     const local = localOpts(q, new Set(foods.map(x=>x.fdcId)));
     open(demoRow()
        + (usda ? `<div class="msg">USDA FoodData Central</div>${usda}` : `<div class="msg">No USDA results. Try simpler words (“sardine canned water”).</div>`)
-       + (local ? `<div class="msg">built-in</div>${local}` : ""));
+       + (local ? `<div class="msg">built-in</div>${local}` : "")
+       + customOpt(q));
   }catch(err){ const local = localOpts(q); problem(err, local ? `<div class="msg">built-in</div>${local}` : ""); }
 }
 async function choose(el){
   if(!el) return;
   if(el.dataset.usda){ doSearch(); return; }
+  if(el.dataset.custom){                                    // a food of the user's own, named as typed, nutrients to be filled in
+    const name = qBox.value.trim() || "New food";
+    const it = f(name, "100", "g", "day", "A manually added food item", NUTS.map(()=>0));
+    openEditors.add(it.id);
+    const row = addFood(it, "Type its nutrients per 100 g, then set the amount");
+    close(); qBox.value = "";
+    row?.nextElementSibling?.querySelector('input[data-f="n"]')?.focus();
+    return;
+  }
   if(el.dataset.local!=null){
     const b = bundledAt(+el.dataset.local);
     addFood(f(b.name,"100","g","day",b.src,b.per100.slice()), "Added at 100 g a day — adjust the amount");
@@ -322,7 +331,6 @@ qBox.addEventListener("keydown", e=>{
   else if(e.key==="Escape"){ close(); }
   else if(e.key==="Enter"){ e.preventDefault(); const os = options(); if(!resultsBox.hidden && os[active]) choose(os[active]); else doSearch(); }
 });
-$("go").addEventListener("click", doSearch);
 resultsBox.addEventListener("mousemove", e=>{ const o = e.target.closest(".opt"); if(o){ const i = options().indexOf(o); if(i!==active) setActive(i); } });
 resultsBox.addEventListener("mousedown", e=> e.preventDefault()); // keep focus in the search box
 resultsBox.addEventListener("click", e=>{
@@ -333,7 +341,7 @@ resultsBox.addEventListener("click", e=>{
   choose(e.target.closest(".opt"));
 });
 // a click whose target was removed by its own handler (the notice's ×) is not a click outside
-document.addEventListener("click", e=>{ if(e.target.isConnected && !e.target.closest(".searchbar")) close(); });
+document.addEventListener("click", e=>{ if(e.target.isConnected && !e.target.closest(".adder, #results")) close(); });
 
 /* ---------- iOS Safari zooms into any focused control under 16px; maximum-scale=1 stops that
    and, since iOS 10, still leaves pinch zoom alone. Applied only on iOS because Android
