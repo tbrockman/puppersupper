@@ -95,10 +95,13 @@ td select{max-width:5.5rem;border: none;background: initial;}
 .src{font-size:.68rem; color:var(--ink-soft)}
 .foodname{max-width:16rem; min-width:10rem}
 /* note field in the nutrient panel: same label-over-input look as the nutrient cells */
-.notefield{display:flex; flex-direction:column; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem}
-.notefield input{width:100%; padding:.12rem .3rem; font-size:.78rem}
-td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums} /* hugs its text (mirror-sized) so the handle sits snug on its left */
+.notefield{display:flex; flex-direction:column; align-items:flex-start; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem; max-width:34rem}
+.notefield .lt{border-bottom:1px solid var(--rule); padding-bottom:.1rem}
+.notefield input{width:100%; padding:.12rem .3rem; font-size:.78rem; background:#fff}
+td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums} /* hugs its text (mirror-sized) so the handle sits snug beside it */
 td.amount .edit{max-width:7.5rem}
+/* room to the right of a number for its handle, on the header too so the digits still end under the heading */
+th.amount, td.amount, #tbl-in th.value, #tbl-in td.num{padding-right:1.7rem}
 input.bad, td.bad{color:var(--brick)}
 td.actions{white-space:nowrap; text-align:right}
 /* an open row and its nutrient panel read as one block */
@@ -106,7 +109,7 @@ tr.open td{background:var(--wash); border-bottom:none}
 tr.editor td{background:var(--wash); padding-bottom: 0.75rem;}
 .nutgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(8.4rem, 1fr)); gap:.35rem .7rem}
 .nutgrid label{font-size:.68rem; color:var(--ink-soft); display:flex; flex-direction:column; gap:.1rem}
-.nutgrid input{width:100%; padding:.12rem .3rem; font-size:.78rem}
+.nutgrid input{width:100%; padding:.12rem .3rem; font-size:.78rem; background:#fff}
 @keyframes rowflash{from{background:#DFE7DC}to{background:transparent}}
 tr.flash td{animation:rowflash 1.6s ease-out}
 @media (prefers-reduced-motion: reduce){ tr.flash td{animation:none} }
@@ -186,7 +189,7 @@ tr.hazardous .foodname .edit{max-width:calc(100% - 1.8rem)}
 td.actions button[data-f="edit"]{position:relative}
 .badge{position:absolute; top:-.15rem; right:-.2rem; min-width:.85rem; height:.85rem; padding:0 .15rem; border-radius:.45rem;
   background:var(--amber); color:#fff; font-size:.55rem; line-height:.85rem; text-align:center; pointer-events:none}
-.nutgrid .lt{display:inline-flex; align-items:center; gap:.2rem}
+.nutgrid .lt{display:inline-flex; align-items:center; gap:.2rem; border-bottom:1px solid var(--rule); padding-bottom:.1rem}
 .nutgrid label .lt .info{visibility:hidden} .nutgrid label.unknown .lt .info{visibility:visible} /* toggles without relayout */
 .nutgrid label.unknown{color:var(--amber)} .nutgrid label.unknown.soft{color:var(--ink-soft)} /* an informational blank is inconsequential */
 .tip{position:fixed; z-index:50; background:var(--ink); color:var(--bone); padding:.5rem .65rem; border-radius:4px;

@@ -27,7 +27,7 @@ function foodRow(it){
   const hazard = hz.length ? `<span class="info hazard" tabindex="0" role="note" data-tip="${esc(`Known to harm dogs: ${hz.map(h=>h.what).join("; ")}. ${hz.map(h=>h.why).join(" ")}`)}" data-src="${esc(SOURCES[hz[0].src].url)}" data-src-title="${esc(SOURCES[hz[0].src].title)}">${icon("alert",14)}</span>` : "";
   return `<tr data-id="${esc(it.id)}" class="${open?"open":""}${hz.length?" hazardous":""}">
     <td class="foodname">${hazard}${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}</td>
-    <td class="num amount">${editable({ value:it.amount, cls:"amt", side:"left", inputCls:bad?"bad":"", attrs:`inputmode="decimal" data-f="amount" aria-label="${esc(it.name)} amount"`, label:"Edit amount" })}</td>
+    <td class="num amount">${editable({ value:it.amount, cls:"amt", inputCls:bad?"bad":"", attrs:`inputmode="decimal" data-f="amount" aria-label="${esc(it.name)} amount"`, label:"Edit amount" })}</td>
     <td><select data-f="unit" aria-label="unit">${opts(UNITS, it.unit)}</select></td>
     <td><select data-f="per" aria-label="per">${opts(PERIODS, it.per)}</select></td>
     <td class="num gday ${bad?"bad":""}">${gramsText(it)}</td>
@@ -35,7 +35,7 @@ function foodRow(it){
 }
 function editorRow(it){
   return `<tr class="editor" data-id="${esc(it.id)}"><td colspan="6">
-    <label class="notefield">Note or source<input type="text" value="${esc(it.src)}" data-f="src" placeholder="where these numbers came from, batch size, brand\u2026" spellcheck="false" autocomplete="off"></label>
+    <label class="notefield"><span class="lt">Note or source</span><input type="text" value="${esc(it.src)}" data-f="src" placeholder="where these numbers came from, batch size, brand\u2026" spellcheck="false" autocomplete="off"></label>
     <div class="nutgrid">${NUTS.map((n,j)=>{ const v = it.per100[j], soft = isInfo(j);
       return `<label class="${v==null?"unknown":""}${soft?" soft":""}"><span class="lt">${n[0]} ${n[1]} /100 g ${soft
         ? info("Not reported. Shown for information only, so nothing depends on it.", 11)
@@ -46,7 +46,7 @@ function editorRow(it){
 let adderRow = null;
 export function setAdderRow(el){ adderRow = el; }
 export function renderFoods(){
-  const head = `<thead><tr><th>Food</th><th class="num">Amount</th><th>Unit</th><th>Per</th><th class="num">g / day</th><th></th></tr></thead>`;
+  const head = `<thead><tr><th>Food</th><th class="num amount">Amount</th><th>Unit</th><th>Per</th><th class="num">g / day</th><th></th></tr></thead>`;
   const tbl = document.getElementById("tbl-foods");
   const focused = adderRow && adderRow.contains(document.activeElement) ? document.activeElement : null;
   tbl.innerHTML = head + "<tbody>" + S.foods.map(it=> foodRow(it) + (openEditors.has(it.id) ? editorRow(it) : "")).join("") + "</tbody>";
