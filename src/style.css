@@ -154,7 +154,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 .adder input:disabled, .adder select:disabled, .adder .fill, .adder button:disabled{opacity:.45}
 .adder button:disabled{cursor:default}
 #keybtn.has-key{color:var(--moss)}
-#keybtn .ico{transform:translateX(2px)} /* the key glyph sits right of centre in its own box; nudge it to line up with the sliders icon below */
+#keybtn .ico{transform:translateX(1px)} /* the key glyph sits right of centre in its own box; nudge it to line up with the sliders icon below */
 .adder .edit-pen, .adder .edit-cancel{display:none}
 #keypop{position:fixed}
 .keypop{position:absolute; right:0; top:2.1rem; z-index:36; width:24rem; max-width:calc(100vw - 2rem); text-align:left; font-weight:400; letter-spacing:0; font-size:.86rem; line-height:1.4; background:#fff; border:1px solid var(--rule);
