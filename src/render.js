@@ -1,4 +1,4 @@
-import { NUTS, UNITS, PERIODS, SOURCES, NOTES, PURPOSE, DISPLAY, hazardsOf, iKcal, iALA, iAA, iPUFA } from "./data.js";
+import { NUTS, UNITS, PERIODS, SOURCES, NOTES, PURPOSE, DISPLAY, hazardsOf, isInfo, iKcal, iALA, iAA, iPUFA } from "./data.js";
 import { S, gramsPerDay, unknownOf } from "./state.js";
 import { analyze, ENERGY_TOLERANCE, N6N3_MAX, E_PUFA_MIN } from "./analysis.js";
 import { icon } from "./icons.js";
@@ -38,8 +38,10 @@ function foodRow(it){
 function editorRow(it){
   return `<tr class="editor" data-id="${esc(it.id)}"><td colspan="6">
     <label class="notefield">Note or source<input type="text" value="${esc(it.src)}" data-f="src" placeholder="where these numbers came from, batch size, brand\u2026" spellcheck="false" autocomplete="off"></label>
-    <div class="nutgrid">${NUTS.map((n,j)=>{ const v = it.per100[j];
-      return `<label class="${v==null?"unknown":""}"><span class="lt">${n[0]} ${n[1]} /100 g ${warn("Not reported; counts as 0. Type a value if you know it, or 0 if there is none.", 11)}</span><input type="number" step="any" min="0" value="${v==null?"":+(+v).toFixed(3)}" placeholder="${v==null?"not reported":""}" data-f="n" data-j="${j}" aria-label="${esc(n[0])} per 100 g${v==null?", not reported":""}"></label>`; }).join("")}
+    <div class="nutgrid">${NUTS.map((n,j)=>{ const v = it.per100[j], soft = isInfo(j);
+      return `<label class="${v==null?"unknown":""}${soft?" soft":""}"><span class="lt">${n[0]} ${n[1]} /100 g ${soft
+        ? info("Not reported. Shown for information only, so nothing depends on it.", 11)
+        : warn("Not reported; counts as 0. Type a value if you know it, or 0 if there is none.", 11)}</span><input type="number" step="any" min="0" value="${v==null?"":+(+v).toFixed(3)}" placeholder="${v==null?"not reported":""}" data-f="n" data-j="${j}" aria-label="${esc(n[0])} per 100 g${v==null?", not reported":""}"></label>`; }).join("")}
     </div></td></tr>`;
 }
 /** The table's last row: where foods are searched for and added. Created once by main.js and kept across re-renders. */
@@ -95,11 +97,9 @@ export function placeLabels(){
 }
 /**
  * A range strip. The strip *is* the acceptable range: it runs from the minimum
- * to the maximum (or, with no maximum, on past the value) and only stretches
- * beyond an end when the value falls outside it, leaving the dot a little
- * inside the edge, but never so far that the range itself shrinks below half
- * the strip. Log scale, so a value twice over reads the same as one twice
- * under. Ticks beneath give the minimum and maximum in the row's unit.
+ * to the maximum (or, with no maximum, on past the value). A value outside it
+ * sits at the band's end. Log scale between the ends. Ticks beneath give the
+ * minimum and maximum in the row's unit.
  */
 /**
  * `ends` describes the right-hand end when there is no AAFCO maximum: either
@@ -109,13 +109,9 @@ function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false, ends={}){
   if(!(mn>0)) return range(`<div class="dot" style="--x:50%"></div>`, "", 50, label);   // nothing to judge against: the value alone
   v = Number.isFinite(v) ? v : v>0 ? (mx ?? adv ?? mn)*3 : 0;  // an infinite ratio sits well past the end
   const top = mx ?? adv, isAdv = mx==null && adv!=null;           // an advisory level stands in for a missing maximum
-  const below = v < mn, above = top!=null && v > top;
-  let lo = below ? (v>0 ? v/1.15 : 0) : mn;
-  let hi = above ? v*1.15 : (top ?? Math.max(v, mn)*1.3);
-  // the acceptable range keeps at least half the strip; a value further out than that sits at the edge
-  lo = Math.max(lo, mn*mn/(top ?? hi));
-  if(above) hi = Math.min(hi, top*top/mn);
-  // a ceiling-only check (the omega ratio) runs linearly from 0 to its ceiling: a log scale has no zero to start from
+  // the strip is the acceptable range itself: from the minimum to the maximum, or on past the value when there is
+  // no maximum; a value outside it sits at the band's end (its label above still gives the number)
+  const lo = mn, hi = top ?? Math.max(v, mn)*1.3;
   const pos = noMin ? x => Math.max(0, Math.min(100, 100*x/hi))
                     : x => Math.max(0, Math.min(100, 100*Math.log(Math.max(x,lo)/lo)/Math.log(hi/lo)));
   const bandL = noMin ? 0 : pos(mn), bandR = top!=null ? pos(top) : 100, dot = pos(v);
@@ -162,13 +158,13 @@ export function renderAnalysis(){
         `<span class="wrap">Omega-6 :<br>Omega-3 ${info(`AAFCO caps (linoleic + arachidonic) : (alpha-linolenic + EPA + DHA) at ${N6N3_MAX}:1 for adult dogs. Omega-3 has no minimum of its own; enough is needed to hold the ratio. More omega-3 (fish, fish oil, flaxseed) or less omega-6 (vegetable oils, poultry fat) lowers it.`)}</span>`,
         "",
         strip(Number.isNaN(a.n6n3.value)?0:a.n6n3.value, 1, N6N3_MAX, ratioText(a.n6n3.value, 1) + " : 1", v=>v.toFixed(0), null, true),
-        a.n6n3.status==="unknown" ? mark("none") + missWarn("A fatty acid", a.n6n3.missing) + (a.n6n3.missing.length ? " incomplete fatty-acid data" : " no fatty-acid data")
+        a.n6n3.status==="unknown" ? mark("none") + (a.n6n3.missing.length ? missWarn("A fatty acid", a.n6n3.missing) : " no fatty-acid data")
           : a.n6n3.status==="high" ? mark("high", `above ${N6N3_MAX}:1`) + " more omega-3 or less omega-6" : mark("ok", `within ${N6N3_MAX}:1`))
   + vrow(a.ePufa.status==="ok"?"okrow":a.ePufa.status==="low"?"low":"", "Vitamin E : PUFA",
         `AAFCO asks for at least ${E_PUFA_MIN} IU of vitamin E per gram of polyunsaturated fat, since vitamin E is used up protecting those fats. Adding fish oil raises the need.`,
         strip(Number.isNaN(a.ePufa.value)?0:a.ePufa.value, E_PUFA_MIN, null, ratioText(a.ePufa.value) + " IU/g", v=>v.toFixed(1), null, false,
               { open: "There is no upper limit on vitamin E per gram of polyunsaturated fat; more is fine. The band is open-ended and drawn just past the value." }),
-        a.ePufa.status==="unknown" ? mark("none") + missWarn("Vitamin E or polyunsaturated fat", a.ePufa.missing) + (a.ePufa.missing.length ? " incomplete data" : " no data")
+        a.ePufa.status==="unknown" ? mark("none") + (a.ePufa.missing.length ? missWarn("Vitamin E or polyunsaturated fat", a.ePufa.missing) : " no data")
           : a.ePufa.status==="low" ? mark("low", `below ${E_PUFA_MIN} IU/g`) + " add vitamin E" : mark("ok", `at least ${E_PUFA_MIN} IU/g`));
 
   const srcAttrs = keys => { const sr = SOURCES[keys[0]]; return sr ? ` data-src="${esc(sr.url)}" data-src-title="${esc(sr.title)}"` : ""; };
@@ -189,12 +185,12 @@ export function renderAnalysis(){
     const over = r.status==="high" || r.status==="watch", under = r.status==="low" || r.status==="marginal";
     const sign = over ? note?.excess : under ? note?.deficit : "";        // what sustained excess or shortfall looks like
     const noteIcon = sign ? " " + info(sign, 12, srcAttrs(note.src)) : "";
-    const st = r.status==="info" ? `<span class="src">for information</span>${purpose}`
+    const st = r.status==="info" ? mark("none", "for information") + purpose
       : r.status==="unknown" ? mark("none") + " enter the dog\u2019s weight"
-      : r.status==="high" ? mark("high", "over the AAFCO maximum") + miss + noteIcon
-      : r.status==="watch" ? mark("watch", "above the advisory level") + miss + noteIcon
-      : r.status==="low" ? mark("low", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + miss + noteIcon
-      : r.status==="marginal" ? mark("marg", `marginal: ${ge}${pctText(r.pct)} of daily minimum`) + miss + noteIcon
+      : r.status==="high" ? mark("high", `${ge}${pctText(r.pct)} of daily minimum`) + " above the maximum" + miss + noteIcon
+      : r.status==="watch" ? mark("watch", `${ge}${pctText(r.pct)} of daily minimum`) + " above the advisory" + miss + noteIcon
+      : r.status==="low" ? mark("low", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + (isEPA ? " below the target" : " below the minimum") + miss + noteIcon
+      : r.status==="marginal" ? mark("marg", `${ge}${pctText(r.pct)} of daily minimum`) + " marginal" + miss + noteIcon
       : r.dayMin ? mark("ok", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + miss
       : mark(relKind, related ? `judged by the ${r.j===iPUFA ? "vitamin E : PUFA" : "omega-6 : omega-3"} balance` : "") + miss + purpose;
     // with no energy need to scale by, fall back to judging density against the per-1,000 kcal profile

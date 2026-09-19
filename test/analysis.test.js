@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NUTS, UNITS, PERIODS, EXAMPLE, DISPLAY, NOTES, SOURCES, iKcal, iCa, iP, iVitE, iEPA, iLA, iALA, iAA, iPUFA } from "../src/data.js";
 import { sanitize, setState, totals, totalGrams, gramsPerDay, weightKg, missing, unknownOf } from "../src/state.js";
+import { isInfo as n_is_info } from "../src/data.js";
 import { analyze, judge, caToP, ratio, rerFor, merFor, N6N3_MAX, E_PUFA_MIN } from "../src/analysis.js";
 import { BUNDLED } from "../src/bundled.js";
 
@@ -231,7 +232,8 @@ test("sanitize keeps null for unknown values and treats blank or garbage the sam
   const s = sanitize({ foods: [{ name: "x", amount: "1", per100: [1, null, undefined, "", "abc", -3, "4"] }] });
   assert.deepEqual(s.foods[0].per100.slice(0, 7), [1, null, null, null, null, 0, 4]);
   assert.ok(s.foods[0].per100.slice(7).every(v => v === null), "missing columns are unknown, not zero");
-  assert.deepEqual(unknownOf(s.foods[0]), [1, 2, 3, 4, ...Array.from({ length: NUTS.length - 7 }, (_, i) => i + 7)]);
+  const consequential = NUTS.map((n, j) => j).filter(j => j >= 7 && n_is_info(j) === false);
+  assert.deepEqual(unknownOf(s.foods[0]), [1, 2, 3, 4, ...consequential], "informational blanks (carbohydrate, sugars) are not counted");
   assert.deepEqual(unknownOf({ per100: NUTS.map(() => 0) }), []);
 });
 

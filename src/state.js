@@ -1,4 +1,4 @@
-import { EXAMPLE, NUTS, UNITS, PERIODS, WEIGHT_UNITS, DEFAULT_TITLE, newId, usdaId } from "./data.js";
+import { EXAMPLE, NUTS, UNITS, PERIODS, WEIGHT_UNITS, DEFAULT_TITLE, newId, usdaId, isInfo } from "./data.js";
 import { BUNDLED } from "./bundled.js";
 import { evalExpr } from "./expr.js";
 
@@ -102,8 +102,8 @@ export function totals(state = S){
   return t;
 }
 export const totalGrams = (state = S) => state.foods.reduce((a,x)=>a+g0(x),0);
-/** indexes of the nutrients an item does not report */
-export const unknownOf = it => it.per100.map((v,j)=> v==null ? j : -1).filter(j=>j>=0);
+/** indexes of the nutrients an item does not report (the informational ones excepted: nothing depends on them) */
+export const unknownOf = it => it.per100.map((v,j)=> v==null && !isInfo(j) ? j : -1).filter(j=>j>=0);
 /**
  * For each nutrient, the foods actually being fed (grams > 0) whose value for
  * it is unknown, as [{ name, grams }]. A non-empty list means that nutrient's
@@ -113,7 +113,7 @@ export function missing(state = S){
   const m = NUTS.map(()=>[]);
   for(const it of state.foods){
     const g = g0(it); if(!g) continue;
-    it.per100.forEach((v,j)=>{ if(v==null) m[j].push({ name: it.name, grams: g }); });
+    it.per100.forEach((v,j)=>{ if(v==null && !isInfo(j)) m[j].push({ name: it.name, grams: g }); });
   }
   return m;
 }

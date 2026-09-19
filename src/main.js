@@ -27,7 +27,7 @@ setAdderRow(adder);
 const keyBox = $("apikey"), shareKey = $("sharekey"), keyBtn = adder.querySelector("#keybtn"), keyPop = $("keypop");
 function useKey(k){
   keyBox.value = k; setApiKey(k); store.set("lady.fdckey", k);
-  keyBtn.classList.toggle("on", !!k); keyBtn.title = k ? "USDA API key (set)" : "USDA API key";
+  keyBtn.classList.toggle("has-key", !!k); keyBtn.title = k ? "USDA API key (set)" : "USDA API key";
   shareKey.disabled = !k;
   if(!k) shareKey.checked = false;
 }
