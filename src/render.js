@@ -215,12 +215,12 @@ export function renderAnalysis(){
  * table keeps its own compact layout, with each value beside its label.) The
  * strip takes its full width (STRIP_MAX) unless the table is too narrow, in
  * which case it shrinks towards STRIP_MIN. A modest fixed gap (GAP) sits on
- * either side of the strip, shrinking only when the table is too narrow, so
- * the strip stays close to the names and the status close to the strip; any
- * width left over falls at the far right. Each measured column is shrunk to
+ * either side of the strip, shrinking to GAP_MIN when the table is narrow and
+ * no further: past that the table is given a minimum width and scrolls
+ * sideways instead of crowding. Any width left over falls at the far right. Each measured column is shrunk to
  * its content for a moment to measure it.
  */
-const STRIP_MAX = 14, STRIP_MIN = 4, GAP = 1.25, GAP_MIN = 0.5; // rem
+const STRIP_MAX = 14, STRIP_MIN = 8, GAP = 1.25, GAP_MIN = 1; // rem: below these the table overflows (and scrolls) rather than crowding
 export function syncColumns(){
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const th = (id, col) => document.getElementById(id)?.tHead?.rows[0]?.cells[col];
@@ -233,11 +233,13 @@ export function syncColumns(){
   };
   const first = [th("tbl-an", 0)], ranges = [th("tbl-an", 1)], status = [th("tbl-an", 2)];
   const c0 = measure(first), c2 = measure(status);
-  const table = document.getElementById("tbl-an")?.clientWidth || 0;
+  const tbl = document.getElementById("tbl-an"); if(tbl) tbl.style.minWidth = "";   // measure the space actually available, not last time's overflow
+  const table = tbl?.clientWidth || 0;
   // the measured columns include their cell padding; the range cell needs its own padding on top of strip + gap
   const cell = ranges.filter(Boolean)[0], pad = cell ? parseFloat(getComputedStyle(cell).paddingLeft) + parseFloat(getComputedStyle(cell).paddingRight) : 0;
   const strip = Math.max(STRIP_MIN * rem, Math.min(STRIP_MAX * rem, table - c0 - c2 - pad - 3 * GAP_MIN * rem));
-  const gap = Math.max(0, Math.min(GAP * rem, (table - c0 - strip - c2 - pad) / 3));
+  const gap = Math.max(GAP_MIN * rem, Math.min(GAP * rem, (table - c0 - strip - c2 - pad) / 3));
+  if(tbl) tbl.style.minWidth = Math.ceil(c0 + strip + c2 + pad + 3 * gap) + "px";   // on a narrow screen this overflows into a scroll
   first.filter(Boolean).forEach(t => t.style.width = Math.round(c0 + gap) + "px");
   ranges.filter(Boolean).forEach(t => t.style.width = Math.round(strip + gap + pad) + "px");
   status.filter(Boolean).forEach(t => t.style.width = "");      // takes the rest: its content plus the same gap
