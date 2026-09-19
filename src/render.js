@@ -35,9 +35,10 @@ function foodRow(it){
 }
 function editorRow(it){
   return `<tr class="editor" data-id="${esc(it.id)}"><td colspan="6">
-    <label class="notefield"><span class="lt">Note or source</span><input type="text" value="${esc(it.src)}" data-f="src" placeholder="where these numbers came from, batch size, brand\u2026" spellcheck="false" autocomplete="off"></label>
+    <label class="notefield"><span class="lt">Note or source</span>${editable({ value:it.src, cls:"note", attrs:`data-f="src"`, placeholder:"where these numbers came from, batch size, brand\u2026", label:"Edit note" })}</label>
+    <div class="src edhead">Nutrients per 100 g</div>
     <div class="nutgrid">${NUTS.map((n,j)=>{ const v = it.per100[j], soft = isInfo(j);
-      return `<label class="${v==null?"unknown":""}${soft?" soft":""}"><span class="lt">${n[0]} ${n[1]} /100 g ${soft
+      return `<label class="${v==null?"unknown":""}${soft?" soft":""}"><span class="lt">${n[0]} ${n[1]} ${soft
         ? info("Not reported. Shown for information only, so nothing depends on it.", 11)
         : warn("Not reported; counts as 0. Type a value if you know it, or 0 if there is none.", 11)}</span><input type="number" step="any" min="0" value="${v==null?"":+(+v).toFixed(3)}" placeholder="${v==null?"not reported":""}" data-f="n" data-j="${j}" aria-label="${esc(n[0])} per 100 g${v==null?", not reported":""}"></label>`; }).join("")}
     </div></td></tr>`;

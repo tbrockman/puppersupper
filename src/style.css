@@ -95,9 +95,12 @@ td select{max-width:5.5rem;border: none;background: initial;}
 .src{font-size:.68rem; color:var(--ink-soft)}
 .foodname{max-width:16rem; min-width:10rem}
 /* note field in the nutrient panel: same label-over-input look as the nutrient cells */
-.notefield{display:flex; flex-direction:column; align-items:flex-start; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem; max-width:34rem}
-.notefield .lt{border-bottom:1px solid var(--rule); padding-bottom:.1rem}
-.notefield input{width:100%; padding:.12rem .3rem; font-size:.78rem; background:#fff}
+/* the note: a field that hugs its text (mirror-sized), under a label whose rule spans exactly that width */
+.notefield{display:inline-flex; flex-direction:column; align-items:stretch; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem; max-width:34rem}
+.notefield .lt{border-bottom:1px solid; padding-bottom:.1rem}
+.notefield .edit{display:flex; font-size:.78rem} /* the mirror that sizes the field must share its font */
+.notefield .edit .edit-in{margin:0; padding:.12rem .3rem; background:#fff; min-width:12ch}
+.edhead{margin:.6rem 0 .3rem; font-weight:600}
 td.amount .edit-in, #tbl-in td.num .edit-in{margin:0 -.3rem 0 0} /* right-aligned numbers: pull the padding back on the right instead, so digits end under the heading */
 td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums} /* hugs its text (mirror-sized) so the handle sits snug beside it */
 td.amount .edit{max-width:7.5rem}
@@ -150,7 +153,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 .adder input:disabled, .adder select:disabled, .adder .fill, .adder button:disabled{opacity:.45}
 .adder button:disabled{cursor:default}
 #keybtn.has-key{color:var(--moss)}
-#keybtn .ico{transform:translateX(-1px)} /* the key glyph sits right of centre in its own box; nudge it to line up with the sliders icon below */
+#keybtn .ico{transform:translateX(2px)} /* the key glyph sits right of centre in its own box; nudge it to line up with the sliders icon below */
 .adder .edit-pen, .adder .edit-cancel{display:none}
 #keypop{position:fixed}
 .keypop{position:absolute; right:0; top:2.1rem; z-index:36; width:24rem; max-width:calc(100vw - 2rem); text-align:left; font-weight:400; letter-spacing:0; font-size:.86rem; line-height:1.4; background:#fff; border:1px solid var(--rule);
@@ -194,7 +197,7 @@ tr.hazardous .foodname .edit{max-width:calc(100% - 1.8rem)}
 td.actions button[data-f="edit"]{position:relative}
 .badge{position:absolute; top:-.15rem; right:-.2rem; min-width:.85rem; height:.85rem; padding:0 .15rem; border-radius:.45rem;
   background:var(--amber); color:#fff; font-size:.55rem; line-height:.85rem; text-align:center; pointer-events:none}
-.nutgrid .lt{display:inline-flex; align-items:center; gap:.2rem; border-bottom:1px solid var(--rule); padding-bottom:.1rem}
+.nutgrid .lt{display:inline-flex; align-items:center; gap:.2rem; border-bottom:1px solid; padding-bottom:.1rem}
 .nutgrid label .lt .info{visibility:hidden} .nutgrid label.unknown .lt .info{visibility:visible} /* toggles without relayout */
 .nutgrid label.unknown{color:var(--amber)} .nutgrid label.unknown.soft{color:var(--ink-soft)} /* an informational blank is inconsequential */
 .tip{position:fixed; z-index:50; background:var(--ink); color:var(--bone); padding:.5rem .65rem; border-radius:4px;
