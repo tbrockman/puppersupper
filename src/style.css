@@ -161,7 +161,9 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 .keypop[hidden]{display:none}
 .keypop p{margin:0 0 .6rem; line-height:1.45}
 .keypop > label{display:block; font-size:.72rem; margin-bottom:.2rem}
-.keypop #apikey{width:100%; margin-bottom:.5rem; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.78rem}
+.keypop #apikey{width:100%; margin-bottom:.5rem; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.78rem;
+  background:#fff; border:1px solid var(--rule); border-radius:3px; padding:.2rem .4rem} /* a proper box: it is pasted into, not edited in place */
+.keypop #apikey:focus{outline:2px solid var(--moss); outline-offset:1px}
 .keypop .row{display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap}
 .keypop .sharekey{display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem}
 .keypop .sharekey:has(input:disabled){opacity:.5}

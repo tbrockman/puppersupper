@@ -319,8 +319,8 @@ async function doSearch(){
     usdaHits = new Map(foods.map(x=>[String(x.fdcId), x]));
     const usda = foods.map(x=> opt(`data-fdc="${esc(x.fdcId)}"`, `${esc(x.description)}${x.brandOwner?` — ${esc(x.brandOwner)}`:""}`, esc(x.dataType))).join("");
     const local = localOpts(q, new Set(foods.map(x=>x.fdcId)));
-    open(actions(q) + sep(demoRow()
-       + (usda ? `<div class="msg">USDA FoodData Central</div>${usda}` : `<div class="msg">No USDA results. Try simpler words (“sardine canned water”).</div>`)
+    open(demoRow() + actions(q) + sep(
+         (usda ? `<div class="msg">USDA FoodData Central</div>${usda}` : `<div class="msg">No USDA results. Try simpler words (“sardine canned water”).</div>`)
        + (local ? `<div class="msg">built-in</div>${local}` : "")));
   }catch(err){ const local = localOpts(q); problem(err, local ? `<div class="msg">built-in</div>${local}` : ""); }
 }
