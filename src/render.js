@@ -24,12 +24,10 @@ export const badgeHtml = it => { const n = unknownOf(it).length; return n ? `<sp
 function foodRow(it){
   const g = gramsPerDay(it), bad = !Number.isFinite(g), open = openEditors.has(it.id);
   const hz = hazardsOf(it);
-  const hazard = hz.length ? ` <span class="info hazard" tabindex="0" role="note" data-tip="${esc(`Known to harm dogs: ${hz.map(h=>h.what).join("; ")}. ${hz.map(h=>h.why).join(" ")}`)}" data-src="${esc(SOURCES[hz[0].src].url)}" data-src-title="${esc(SOURCES[hz[0].src].title)}">${icon("alert",14)}</span>` : "";
+  const hazard = hz.length ? `<span class="info hazard" tabindex="0" role="note" data-tip="${esc(`Known to harm dogs: ${hz.map(h=>h.what).join("; ")}. ${hz.map(h=>h.why).join(" ")}`)}" data-src="${esc(SOURCES[hz[0].src].url)}" data-src-title="${esc(SOURCES[hz[0].src].title)}">${icon("alert",14)}</span>` : "";
   return `<tr data-id="${esc(it.id)}" class="${open?"open":""}${hz.length?" hazardous":""}">
-    <td class="foodname">
-      ${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}${hazard}
-    </td>
-    <td class="num amount"><input type="text" inputmode="decimal" class="${bad?"bad":""}" value="${esc(it.amount)}" data-f="amount" aria-label="${esc(it.name)} amount" spellcheck="false"></td>
+    <td class="foodname">${hazard}${editable({ value:it.name, cls:"name", attrs:`data-f="name" aria-label="Food name"`, label:"Rename" })}</td>
+    <td class="num amount">${editable({ value:it.amount, cls:"amt", side:"left", inputCls:bad?"bad":"", attrs:`inputmode="decimal" data-f="amount" aria-label="${esc(it.name)} amount"`, label:"Edit amount" })}</td>
     <td><select data-f="unit" aria-label="unit">${opts(UNITS, it.unit)}</select></td>
     <td><select data-f="per" aria-label="per">${opts(PERIODS, it.per)}</select></td>
     <td class="num gday ${bad?"bad":""}">${gramsText(it)}</td>
@@ -55,6 +53,7 @@ export function renderFoods(){
   if(adderRow){ tbl.tBodies[0].prepend(adderRow); focused?.focus({ preventScroll:true }); } // moving the node drops focus; give it back
   fitAll(tbl);
   document.querySelectorAll("input[data-g]").forEach(i=>{ if(+i.value !== S[i.dataset.g]) i.value = S[i.dataset.g]; });
+  fitAll(document.getElementById("tbl-in"));
   const wu = document.getElementById("g-weightUnit"); if(wu.value !== S.weightUnit) wu.value = S.weightUnit;
   const t = document.getElementById("title");
   if(t.value !== S.title){ t.value = S.title; t.dispatchEvent(new Event("input", { bubbles:true })); } // input event re-fits the box

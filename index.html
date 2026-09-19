@@ -60,11 +60,11 @@
     <thead><tr><th>Input</th><th class="num">Value</th><th></th><th>Gives</th></tr></thead>
     <tbody>
       <tr><td><label for="g-weight">Weight</label></td>
-        <td class="num"><input type="number" id="g-weight" step="0.5" min="0" data-g="weight" aria-label="Dog weight"></td>
+        <td class="num"><span class="edit side-left" data-handle="hover"><input type="number" class="edit-in" id="g-weight" step="0.5" min="0" data-g="weight" aria-label="Dog weight"><span class="edit-mirror" aria-hidden="true"></span><button type="button" class="edit-pen" tabindex="-1" aria-label="Edit" title="Edit"><i data-icon="pencil" data-size="14"></i></button><button type="button" class="edit-cancel" tabindex="-1" aria-label="Cancel" title="Cancel (Esc)"><i data-icon="x" data-size="14"></i></button></span></td>
         <td class="unit"><select id="g-weightUnit" aria-label="Weight unit"><option value="kg">kg</option><option value="lb">lb</option></select></td>
         <td class="status" id="w-status"></td></tr>
       <tr><td><label for="g-activity">Activity</label> <span class="info" tabindex="0" role="note" data-tip="How much more than resting energy (RER = 70 × kg^0.75) the dog burns. Typical multipliers: 1.2–1.4 for an inactive or neutered adult, 1.6–1.8 for an active adult, 2–5 for working dogs or growth."><i data-icon="info" data-size="14"></i></span></td>
-        <td class="num"><input type="number" id="g-activity" step="0.1" min="0" data-g="activity" aria-label="Activity multiplier"></td><td class="unit">×RER</td>
+        <td class="num"><span class="edit side-left" data-handle="hover"><input type="number" class="edit-in" id="g-activity" step="0.1" min="0" data-g="activity" aria-label="Activity multiplier"><span class="edit-mirror" aria-hidden="true"></span><button type="button" class="edit-pen" tabindex="-1" aria-label="Edit" title="Edit"><i data-icon="pencil" data-size="14"></i></button><button type="button" class="edit-cancel" tabindex="-1" aria-label="Cancel" title="Cancel (Esc)"><i data-icon="x" data-size="14"></i></button></span></td><td class="unit">×RER</td>
         <td class="status" id="a-status"></td></tr>
     </tbody>
   </table></div>

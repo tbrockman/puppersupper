@@ -1,10 +1,10 @@
-import { EXAMPLE, EMPTY, WEIGHT_UNITS, UNITS, PERIODS, NUTS, HAZARDS, f } from "./data.js";
+import { EXAMPLE, EMPTY, WEIGHT_UNITS, UNITS, PERIODS, NUTS, HAZARDS, hazardsOf, f } from "./data.js";
 import { S, setState, loadLocal, saveLocal, sanitize, backfill, store, weightKg, gramsPerDay } from "./state.js";
 import { renderFoods, renderAnalysis, toast, openEditors, esc, gramsText, initTooltips, badgeHtml, syncColumns, setAdderRow } from "./render.js";
 import { encodeRecipe, decodeRecipe, readHash, buildHash } from "./share.js";
 import { search, searchBundled, searchCached, bundledAt, bundledFdcId, nutrientsFor, setApiKey, DEMO_LIMIT, KEY_LIMIT, SIGNUP_URL } from "./fdc.js";
 import { icon, mountIcons } from "./icons.js";
-import { initEditable, fitAll } from "./editable.js";
+import { initEditable, fitAll, editable } from "./editable.js";
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -14,8 +14,8 @@ initEditable();
 /* ---------- the adder row: first row of the food table, holding the search box (created before the table first renders) ---------- */
 const opts = (obj, sel) => Object.keys(obj).map(k=>`<option value="${k}" ${k===sel?"selected":""}>${k}</option>`).join("");
 const adder = document.createElement("tr"); adder.className = "adder";
-adder.innerHTML = `<td class="foodname"><input type="text" id="q" placeholder="type an ingredient, e.g. sardines" aria-label="Search ingredients or add a food" autocomplete="off"
-    role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list"></td>
+adder.innerHTML = `<td class="foodname">${editable({ value:"", cls:"q", fit:false, label:"Search", placeholder:"type an ingredient, e.g. sardines",
+    attrs:`id="q" aria-label="Search ingredients or add a food" role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list"` })}</td>
   <td class="num amount"><input type="text" value="100" disabled aria-hidden="true" tabindex="-1"></td>
   <td><select disabled aria-hidden="true" tabindex="-1">${opts(UNITS, "g")}</select></td>
   <td><select disabled aria-hidden="true" tabindex="-1">${opts(PERIODS, "day")}</select></td>
@@ -207,7 +207,8 @@ function addFood(it, msg){
 }
 /** Show a food that was just added or replaced: editor open if anything is unreported, focus on its amount. */
 function settle(it, msg){
-  if(it.per100.some(v=>v==null) || it.src==="A manually added food item") openEditors.add(it.id);
+  // editor open when values need filling in; not for a hazardous food, where the warning is the point
+  if((it.per100.some(v=>v==null) || it.src==="A manually added food item") && !hazardsOf(it).length) openEditors.add(it.id);
   renderAll();
   const row = tbl.querySelector(`tr[data-id="${it.id}"]`);
   if(row){ row.classList.add("flash"); row.scrollIntoView({block:"nearest", behavior:"smooth"}); const amt = row.querySelector('input[data-f="amount"]'); amt?.focus(); amt?.select(); }
@@ -360,7 +361,7 @@ async function choose(el){
 function searchKeys(e){
   if(e.key==="ArrowDown"){ e.preventDefault(); resultsBox.hidden ? showLocal() : setActive(active+1); }
   else if(e.key==="ArrowUp"){ e.preventDefault(); setActive(active-1); }
-  else if(e.key==="Escape"){ close(); }
+  else if(e.key==="Escape"){ if(!resultsBox.hidden){ e.stopPropagation(); close(); } }   // first Escape closes the list; a second clears the box
   else if(e.key==="Enter"){ e.preventDefault(); e.stopPropagation(); const os = options(); if(!resultsBox.hidden && os[active]) choose(os[active]); else doSearch(); }
 }
 qBox.addEventListener("input", ()=>{ editing = null; anchor = qBox; showLocal(); });

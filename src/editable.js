@@ -17,17 +17,24 @@ import { icon } from "./icons.js";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-/** HTML for an editable field. attrs is a string of extra attributes for the <input>. */
-export function editable({ value, attrs="", cls="", placeholder="", handle="hover", label="Edit" }){
-  return `<span class="edit ${cls}" data-handle="${handle}">`
-    + `<input type="text" class="edit-in" value="${esc(value)}" placeholder="${esc(placeholder)}" spellcheck="false" autocomplete="off" ${attrs}>`
+/**
+ * HTML for an editable field. attrs is a string of extra attributes for the <input>.
+ *   side     "right" (handle after the text) or "left" (before it: for right-aligned numbers)
+ *   inset    keep the handle inside the box instead of hanging outside it (for a full-width field)
+ *   fit      false leaves the box at its CSS width instead of hugging the text
+ *   type     input type; inputCls extra classes on the input; pen the handle's icon
+ */
+export function editable({ value, attrs="", cls="", inputCls="", placeholder="", handle="hover", label="Edit", side="right", inset=false, fit=true, type="text", pen="pencil" }){
+  return `<span class="edit ${cls} side-${side}${inset?" inset":""}${fit?"":" nofit"}" data-handle="${handle}">`
+    + `<input type="${type}" class="edit-in ${inputCls}" value="${esc(value)}" placeholder="${esc(placeholder)}" spellcheck="false" autocomplete="off" ${attrs}>`
     + `<span class="edit-mirror" aria-hidden="true"></span>`
-    + `<button type="button" class="edit-pen" tabindex="-1" aria-label="${esc(label)}" title="${esc(label)}">${icon("pencil",14)}</button>`
+    + `<button type="button" class="edit-pen" tabindex="-1" aria-label="${esc(label)}" title="${esc(label)}">${icon(pen,14)}</button>`
     + `<button type="button" class="edit-cancel" tabindex="-1" aria-label="Cancel" title="Cancel (Esc)">${icon("x",14)}</button></span>`;
 }
 
 /** Size one input to its text: the mirror carries the same font and padding, plus border and caret. */
 export function fit(input){
+  if(input.closest(".edit.nofit")) return;
   const mirror = input.parentElement?.querySelector(".edit-mirror"); if(!mirror) return;
   mirror.textContent = input.value || input.placeholder || " ";
   input.style.width = (Math.ceil(mirror.getBoundingClientRect().width) + 6) + "px";

@@ -15,21 +15,26 @@ body{
 header{padding:1.1rem 2rem .9rem; border-bottom:1px solid var(--rule)}
 h1{font-size:1.45rem; font-weight:700; letter-spacing:-.01em; display:flex; align-items:center; gap:.4rem; line-height:1.2; min-width:0; flex-wrap:wrap}
 h1 .logo{font-size:1.9rem; line-height:1; flex:none}
-h1 .edit{max-width:100%}
+h1 .edit{max-width:100%; display:flex; gap:.35rem}
+h1 .edit .edit-pen, h1 .edit .edit-cancel{position:static; transform:none} /* the title's handle stays in the flow, before the menu button */
 h1 .menu{margin-left:.35rem}
 
-/* ---------- inline editable text ---------- */
-.edit{display:flex; align-items:center; gap:.35rem; max-width:100%; min-width:0; position:relative}
-.edit .edit-in{background:transparent; border:1px solid transparent; border-radius:3px; padding:.1rem .3rem; margin-left:-.3rem;
+/* ---------- inline editable text ----------
+   A field looks like plain text. Its handle (a pencil, or the search glass) hangs just outside the text on
+   hover, swapped for an × while editing; both are absolutely placed, so nothing moves. */
+.edit{display:inline-flex; align-items:center; max-width:100%; min-width:0; position:relative; vertical-align:middle}
+.edit .edit-in{background:transparent; border:0; border-radius:0; padding:.1rem .3rem; margin:0; outline:none;
   min-width:2ch; max-width:100%; flex:0 1 auto; text-overflow:ellipsis;
   letter-spacing:inherit; word-spacing:inherit} /* form controls reset these; the mirror must measure the same text */
-.edit .edit-in{border:0; border-bottom:1px dashed var(--rule); border-radius:0}
-.edit .edit-in:hover{border-bottom-color:var(--ink-soft)}
-.edit .edit-in:focus{background:transparent; border-bottom:1px solid var(--moss); outline:none; text-overflow:clip}
+.edit .edit-in:focus{text-overflow:clip}
 .edit-mirror{position:absolute; left:0; top:0; visibility:hidden; white-space:pre; pointer-events:none; padding:0 .3rem}
-.edit-pen, .edit-cancel{background:transparent; border:none; color:var(--ink-soft); padding:.15rem; border-radius:3px; cursor:pointer; flex:none; display:inline-flex}
+.edit-pen, .edit-cancel{position:absolute; top:50%; transform:translateY(-50%); right:-1.35rem;
+  background:transparent; border:none; color:var(--ink-soft); padding:.15rem; border-radius:3px; cursor:pointer; display:inline-flex}
+.edit.side-left .edit-pen, .edit.side-left .edit-cancel{right:auto; left:-1.35rem}
+.edit.inset{padding-left:1.45rem} .edit.inset .edit-pen, .edit.inset .edit-cancel{left:.1rem}
+.edit.nofit .edit-in{width:100%; flex:1 1 auto}
 .edit-pen .ico, .edit-cancel .ico{width:14px; height:14px; margin:0}
-.edit-pen:hover{color:var(--moss); background:var(--wash)}
+.edit-pen:hover{color:var(--moss)}
 .edit-cancel{display:none} .edit-cancel:hover{color:var(--brick)}
 .edit:focus-within .edit-pen{display:none}
 .edit:focus-within .edit-cancel{display:inline-flex}
@@ -43,11 +48,9 @@ select{
   min-height:calc(1.45em + .4rem + 2px)} /* selects and text boxes share one height across browsers */
 select{line-height:1.45}
 input[type=number]{text-align:right}
-/* text fields are quiet: no box, just a soft dashed underline that says "you can type here", solid while focused */
-input[type=number], input[type=text], input[type=password]{background:transparent; border:0; border-bottom:1px dashed var(--rule); border-radius:0; padding:.2rem .3rem}
-input[type=number]:hover, input[type=text]:hover, input[type=password]:hover{border-bottom-color:var(--ink-soft)}
-input[type=number]:focus, input[type=text]:focus, input[type=password]:focus{outline:none; border-bottom:1px solid var(--moss)}
-input:disabled{border-bottom-style:dotted}
+/* text fields are quiet: no box at all; editable ones show a handle beside the text on hover (see .edit) */
+input[type=number], input[type=text], input[type=password]{background:transparent; border:0; border-radius:0; padding:.2rem .3rem}
+input[type=number]:focus, input[type=text]:focus, input[type=password]:focus{outline:none}
 select:focus, button:focus{outline:2px solid var(--moss); outline-offset:1px}
 button{background:var(--ink); color:var(--bone); border:none; border-radius:3px;
   padding:.3rem .7rem; cursor:pointer; display:inline-flex; align-items:center; line-height:1.3}
@@ -94,8 +97,9 @@ td select{max-width:5.5rem;border: none;background: initial;}
 /* note field in the nutrient panel: same label-over-input look as the nutrient cells */
 .notefield{display:flex; flex-direction:column; gap:.1rem; font-size:.68rem; color:var(--ink-soft); margin:.25rem 0 .5rem}
 .notefield input{width:100%; padding:.12rem .3rem; font-size:.78rem}
-td.amount input{width:6.5rem; text-align:right; font-variant-numeric:tabular-nums}
-input.bad, td.bad{color:var(--brick)} input.bad{border-bottom-color:var(--brick)}
+td.amount .edit-in{text-align:right; font-variant-numeric:tabular-nums} /* hugs its text (mirror-sized) so the handle sits snug on its left */
+td.amount .edit{max-width:7.5rem}
+input.bad, td.bad{color:var(--brick)}
 td.actions{white-space:nowrap; text-align:right}
 /* an open row and its nutrient panel read as one block */
 tr.open td{background:var(--wash); border-bottom:none}
@@ -136,7 +140,9 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #results .notice a{color:var(--moss); display:inline-flex; align-items:center; gap:.2rem}
 /* API key lives behind a key icon inside the search box */
 /* the adder row: the search box sits where a food name would; the other cells show, greyed, what a new food starts with */
-.adder input#q{width:100%; min-width:12rem}
+.adder .edit.q{width:100%; min-width:16rem} /* a plain field, aligned with the names: no handle, no inset */
+.adder .edit.q .edit-pen, .adder .edit.q .edit-cancel{display:none}
+.edit.nofit .edit-in{min-width:0}
 .adder input:disabled, .adder select:disabled, .adder .fill, .adder button:disabled{opacity:.45}
 .adder button:disabled{cursor:default}
 #keybtn.has-key{color:var(--moss)}
@@ -158,8 +164,8 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 /* inputs: label, value and unit each hug their content so a value sits beside its label; "gives" takes the rest */
 #tbl-in td:first-child{white-space:nowrap; font-weight:500; padding-right:1rem}
 #tbl-in th:first-child, #tbl-in th:nth-child(2), #tbl-in th:nth-child(3){width:1%; white-space:nowrap}
-#tbl-in td.num{width:5.4rem}
-#tbl-in td input[type=number]{width:4.4rem}
+#tbl-in td.num{width:5.4rem; text-align:right}
+#tbl-in td.num .edit-in{text-align:right}
 #tbl-in td.unit, #tbl-in td.status{color:var(--ink-soft)}
 #tbl-in td.unit{font-size:.74rem; padding-left:0; white-space:nowrap}
 #tbl-in td.unit select{font-size:.78rem; padding:.15rem .3rem; min-height:calc(1.45 * .86rem + .4rem + 2px)} /* same height as the weight box */
@@ -169,8 +175,8 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #tbl-an tr.infor td{color:var(--ink-soft)} #tbl-an tr.infor .vl{color:var(--ink-soft); font-weight:500}
 .info.hazard{color:var(--brick)} .info.hazard:hover, .info.hazard:focus{color:var(--brick); opacity:.8}
 tr.hazardous .foodname .edit-in{color:var(--brick)}
-.foodname{white-space:nowrap} .foodname .edit{display:inline-flex; vertical-align:middle} /* the hazard marker stays on the name's line */
-tr.hazardous .foodname .edit{max-width:calc(100% - 1.6rem)}
+.foodname{white-space:nowrap} .foodname .hazard{margin-right:.55rem; vertical-align:middle} /* the hazard marker leads the name */
+tr.hazardous .foodname .edit{max-width:calc(100% - 1.8rem)}
 .info{display:inline-flex; align-items:center; color:var(--ink-soft); cursor:help; vertical-align:middle; border-radius:50%}
 .info:hover, .info:focus{color:var(--moss); outline:none}
 .info:focus-visible{outline:2px solid var(--moss); outline-offset:2px}
@@ -271,7 +277,7 @@ tr.okrow td.status{color:var(--moss)}
   .edit-pen{display:none}
   #tbl-foods{min-width:32rem}
   .foodname{min-width:9rem; max-width:12rem}
-  td.amount input{width:5rem}
+  td.amount .edit{max-width:5.5rem}
   .strip{min-width:4rem}
   .footnote{max-width:none}
 }
