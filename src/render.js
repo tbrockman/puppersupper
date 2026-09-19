@@ -108,9 +108,13 @@ function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false, ends={}){
   if(!(mn>0)) return range(`<div class="dot" style="--x:50%"></div>`, "", 50, label);   // nothing to judge against: the value alone
   v = Number.isFinite(v) ? v : v>0 ? (mx ?? adv ?? mn)*3 : 0;  // an infinite ratio sits well past the end
   const top = mx ?? adv, isAdv = mx==null && adv!=null;           // an advisory level stands in for a missing maximum
-  // the strip is the acceptable range itself: from the minimum to the maximum, or on past the value when there is
-  // no maximum; a value outside it sits at the band's end (its label above still gives the number)
-  const lo = mn, hi = top ?? Math.max(v, mn)*1.3;
+  // the strip runs from the minimum to the maximum (or on past the value when there is no maximum). A value
+  // outside that range becomes the strip's end itself, with the band stopping short of it; the range keeps at
+  // least half the strip, so a value far outside simply sits at the end
+  const below = v < mn, above = top!=null && v > top;
+  let lo = below ? v : mn, hi = above ? v : (top ?? Math.max(v, mn)*1.3);
+  lo = Math.max(lo, mn*mn/(top ?? hi));
+  if(above) hi = Math.min(hi, top*top/mn);
   const pos = noMin ? x => Math.max(0, Math.min(100, 100*x/hi))
                     : x => Math.max(0, Math.min(100, 100*Math.log(Math.max(x,lo)/lo)/Math.log(hi/lo)));
   const bandL = noMin ? 0 : pos(mn), bandR = top!=null ? pos(top) : 100, dot = pos(v);
