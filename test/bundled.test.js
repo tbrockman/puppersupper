@@ -37,7 +37,8 @@ test("spot-check values against USDA SR Legacy", () => {
 
 test("unreported nutrients are null rather than a misleading zero", () => {
   const iodine = NUTS.findIndex(n => n[0] === "Iodine");
-  for (const b of BUNDLED) if (b.src.startsWith("USDA")) assert.equal(b.per100[iodine], null, `${b.name}: SR Legacy / Foundation do not report iodine`);
+  for (const b of BUNDLED) if (b.src.includes("SR Legacy")) assert.equal(b.per100[iodine], null, `${b.name}: SR Legacy does not report iodine`);
+  assert.equal(BUNDLED.find(b => b.name === "Egg, whole, raw (Foundation)").per100[iodine], 49.1, "some Foundation records do report it");
   assert.equal(BUNDLED.find(b => b.name === "Kelp powder").per100[iodine], 150000);
   assert.equal(BUNDLED.find(b => b.name === "Chicken heart, raw").per100[NUTS.findIndex(n => n[0] === "Choline")], null);
   assert.equal(BUNDLED.find(b => b.name === "Olive oil").per100[NUTS.findIndex(n => n[0] === "Vitamin D")], 0, "a reported zero stays zero");
