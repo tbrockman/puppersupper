@@ -53,6 +53,11 @@ export function renderFoods(){
   tbl.innerHTML = head + "<tbody>" + S.foods.map(it=> foodRow(it) + (openEditors.has(it.id) ? editorRow(it) : "")).join("") + "</tbody>";
   if(adderRow){ tbl.tBodies[0].prepend(adderRow); focused?.focus({ preventScroll:true }); } // moving the node drops focus; give it back
   fitAll(tbl);
+  // the amount column need be no wider than its widest value: measure them with the fields' own mirrors
+  let amt = 0;
+  tbl.querySelectorAll("td.amount .edit").forEach(e => { const m = e.querySelector(".edit-mirror"), i = e.querySelector(".edit-in");
+    m.textContent = i.value || i.placeholder || "0"; amt = Math.max(amt, m.getBoundingClientRect().width + 8); });
+  tbl.style.setProperty("--amt", Math.ceil(amt) + "px");
   document.querySelectorAll("input[data-g]").forEach(i=>{ if(+i.value !== S[i.dataset.g]) i.value = S[i.dataset.g]; });
   fitAll(document.getElementById("tbl-in"));
   const wu = document.getElementById("g-weightUnit"); if(wu.value !== S.weightUnit) wu.value = S.weightUnit;
