@@ -186,12 +186,13 @@ export function renderAnalysis(){
     const noteIcon = sign ? " " + info(sign, 12, srcAttrs(note.src)) : "";
     const st = r.status==="info" ? mark("none", "for information") + purpose
       : r.status==="unknown" ? mark("none") + " enter the dog\u2019s weight"
-      : r.status==="high" ? mark("high", `${ge}${pctText(r.pct)} of daily minimum`) + " above the maximum" + miss + noteIcon
-      : r.status==="watch" ? mark("watch", `${ge}${pctText(r.pct)} of daily minimum`) + " above the advisory" + miss + noteIcon
-      : r.status==="low" ? mark("low", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + (isEPA ? " below the target" : " below the minimum") + miss + noteIcon
-      : r.status==="marginal" ? mark("marg", `${ge}${pctText(r.pct)} of daily minimum`) + " marginal" + miss + noteIcon
+      // the note sits next to what it explains: the verdict; the data warning comes after
+      : r.status==="high" ? mark("high", `${ge}${pctText(r.pct)} of daily minimum`) + " above the maximum" + noteIcon + miss
+      : r.status==="watch" ? mark("watch", `${ge}${pctText(r.pct)} of daily minimum`) + " above the advisory" + noteIcon + miss
+      : r.status==="low" ? mark("low", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + (isEPA ? " below the target" : " below the minimum") + noteIcon + miss
+      : r.status==="marginal" ? mark("marg", `${ge}${pctText(r.pct)} of daily minimum`) + " marginal" + noteIcon + miss
       : r.dayMin ? mark("ok", `${ge}${pctText(r.pct)} of ${isEPA ? "target" : "daily minimum"}`) + miss
-      : mark(relKind, related ? `judged by the ${r.j===iPUFA ? "vitamin E : PUFA" : "omega-6 : omega-3"} balance` : "") + miss + purpose;
+      : mark(relKind, related ? `judged by the ${r.j===iPUFA ? "vitamin E : PUFA" : "omega-6 : omega-3"} balance` : "") + purpose + miss;
     // with no energy need to scale by, fall back to judging density against the per-1,000 kcal profile
     const ends = r.adv ? { adv: { tip: advTip, src: SOURCES[r.adv.src[0]] } }
       : { open: `AAFCO sets no maximum for ${r.name.toLowerCase()}, and no other published upper figure exists. The band is open-ended: it is drawn to 1.3\u00d7 the larger of the value and the minimum so the dot has room, and being well above the minimum is normal.` };

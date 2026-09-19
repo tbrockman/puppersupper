@@ -149,6 +149,8 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 .adder input:disabled, .adder select:disabled, .adder .fill, .adder button:disabled{opacity:.45}
 .adder button:disabled{cursor:default}
 #keybtn.has-key{color:var(--moss)}
+#keybtn .ico{transform:translateX(-1px)} /* the key glyph sits right of centre in its own box; nudge it to line up with the sliders icon below */
+.adder .edit-pen, .adder .edit-cancel{display:none}
 #keypop{position:fixed}
 .keypop{position:absolute; right:0; top:2.1rem; z-index:36; width:24rem; max-width:calc(100vw - 2rem); text-align:left; font-weight:400; letter-spacing:0; font-size:.86rem; line-height:1.4; background:#fff; border:1px solid var(--rule);
   border-radius:4px; padding:.7rem .8rem; font-size:.8rem; color:var(--ink-soft)}
@@ -165,7 +167,7 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #tbl-an td:first-child{white-space:nowrap}
 #tbl-an .wrap{display:inline-block; vertical-align:top; line-height:1.3} /* the one long label takes two lines rather than widening the column */
 /* inputs: label, value and unit each hug their content so a value sits beside its label; "gives" takes the rest */
-#tbl-in td:first-child{white-space:nowrap; font-weight:500; padding-right:1rem}
+#tbl-in td:first-child{white-space:nowrap; padding-right:1rem}
 #tbl-in th:first-child, #tbl-in th:nth-child(2), #tbl-in th:nth-child(3){width:1%; white-space:nowrap}
 #tbl-in td.num{width:5.4rem; text-align:right}
 #tbl-in td.num .edit-in{text-align:right}
@@ -178,7 +180,9 @@ tr.flash td{animation:rowflash 1.6s ease-out}
 #tbl-an tr.infor td{color:var(--ink-soft)} #tbl-an tr.infor .vl{color:var(--ink-soft); font-weight:500}
 .info.hazard{color:var(--brick)} .info.hazard:hover, .info.hazard:focus{color:var(--brick); opacity:.8}
 tr.hazardous .foodname .edit-in{color:var(--brick)}
-.foodname{white-space:nowrap} .foodname .hazard{margin-right:.55rem; vertical-align:middle} /* the hazard marker leads the name */
+/* the hazard marker leads the name. Names are inset by their field's own .3rem padding, so the marker takes the
+   same inset to line up with them; that padding is then the gap between marker and text */
+.foodname{white-space:nowrap} .foodname .hazard{margin-left:.3rem; vertical-align:middle}
 tr.hazardous .foodname .edit{max-width:calc(100% - 1.8rem)}
 .info{display:inline-flex; align-items:center; color:var(--ink-soft); cursor:help; vertical-align:middle; border-radius:50%}
 .info:hover, .info:focus{color:var(--moss); outline:none}
