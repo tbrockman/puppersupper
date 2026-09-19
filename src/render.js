@@ -55,8 +55,14 @@ export function renderFoods(){
 }
 
 /* ---------- analysis ---------- */
-/** A tick number under a strip at pos % (centred there by placeLabels()); `adv` marks an advisory level rather than an AAFCO maximum. */
-const tick = (text, pos, adv=false) => text ? `<span class="tk${adv?" adv":""}" style="--x:${pos}%">${esc(text)}</span>` : "";
+/**
+ * A tick number under a strip at pos % (centred there by placeLabels()).
+ * `cls` marks a special tick ("adv": an advisory level; "nomax": an open
+ * end); `tip` (with optional source) makes it hoverable like an info marker.
+ */
+const tick = (text, pos, cls="", tip="", src=null) => text
+  ? `<span class="tk${cls?" "+cls:""}${tip?" info":""}" style="--x:${pos}%"${tip?` tabindex="0" role="note" data-tip="${esc(tip)}"`:""}${src?` data-src="${esc(src.url)}" data-src-title="${esc(src.title)}"`:""}>${esc(text)}</span>`
+  : "";
 /** value label above the dot, the strip, and the tick numbers beneath: one block, as tall as a name with its unit line */
 const range = (inner, ticks, pos, label) =>
   `<div class="range"><div class="vlabel"><span class="vl" style="--x:${pos}%">${esc(label)}</span></div><div class="strip">${inner}</div><div class="ticks">${ticks}</div></div>`;
@@ -73,9 +79,8 @@ export function placeLabels(){
     const at = el => parseFloat(el.style.getPropertyValue("--x")) / 100 * w;
     const vl = r.querySelector(".vl");
     if(vl) vl.style.left = Math.max(dotR, Math.min(w - dotR, at(vl))) + "px";   // where the dot really is
-    // an end tick is centred where the rounded band visibly ends (its cap's centre), which is also where the dot stops
     const tks = [...r.querySelectorAll(".tk")];
-    const xs = tks.map(t => Math.max(dotR, Math.min(w - dotR, at(t))));
+    const xs = tks.map(at);                                   // an end tick sits exactly on the band's edge
     if(tks.length===2){                                       // keep min and max apart by a small gap
       const gap = 6, need = tks[0].offsetWidth/2 + tks[1].offsetWidth/2 + gap - (xs[1] - xs[0]);
       if(need > 0){ xs[0] -= need/2; xs[1] += need/2; }
@@ -91,7 +96,11 @@ export function placeLabels(){
  * the strip. Log scale, so a value twice over reads the same as one twice
  * under. Ticks beneath give the minimum and maximum in the row's unit.
  */
-function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false){
+/**
+ * `ends` describes the right-hand end when there is no AAFCO maximum: either
+ * { adv: {tip, src} } for an advisory level, or { open: tip } for a "no max" label.
+ */
+function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false, ends={}){
   if(!(mn>0)) return range(`<div class="dot" style="--x:50%"></div>`, "", 50, label);   // nothing to judge against: the value alone
   v = Number.isFinite(v) ? v : v>0 ? (mx ?? adv ?? mn)*3 : 0;  // an infinite ratio sits well past the end
   const top = mx ?? adv, isAdv = mx==null && adv!=null;           // an advisory level stands in for a missing maximum
@@ -105,10 +114,13 @@ function strip(v, mn, mx, label, fmtTick=fmt, adv=null, noMin=false){
   const pos = noMin ? x => Math.max(0, Math.min(100, 100*x/hi))
                     : x => Math.max(0, Math.min(100, 100*Math.log(Math.max(x,lo)/lo)/Math.log(hi/lo)));
   const bandL = noMin ? 0 : pos(mn), bandR = top!=null ? pos(top) : 100, dot = pos(v);
+  const right = top==null ? tick("no max", 100, "nomax", ends.open || "")
+              : isAdv     ? tick(fmtTick(top), bandR, "adv", ends.adv?.tip || "", ends.adv?.src)
+              :             tick(fmtTick(top), bandR);
   // the band's edges are the minimum and maximum; the tick numbers beneath them say which is which
   return range(`<div class="band" style="left:${bandL}%; width:${bandR-bandL}%"></div>
     <div class="dot" style="--x:${dot}%"></div>`,
-    tick(fmtTick(noMin ? 0 : mn), bandL) + (top!=null ? tick(fmtTick(top), bandR, isAdv) : ""), dot, label);
+    tick(fmtTick(noMin ? 0 : mn), bandL) + right, dot, label);
 }
 const pctText = p => Number.isFinite(p) ? (100*p).toFixed(0)+"%" : "?";
 export function renderAnalysis(){
@@ -127,22 +139,24 @@ export function renderAnalysis(){
   // computed rows
   const caText = Number.isFinite(caP) ? caP.toFixed(2) : caP===Infinity ? "\u221e" : "\u2013";
   const caStatus = Number.isNaN(caP) ? "no calcium or phosphorus yet" : caP<1 ? "below 1.0 \u00b7 add calcium" : caP>2 ? "above 2.0 \u00b7 too much calcium" : "within range";
-  document.getElementById("vitals-out").innerHTML =
+  const vitals =
     vrow(a.energy==="ok"?"okrow":"low", "Calories per day",
         `Energy in the diet versus the estimated need: RER \u00d7 activity, where RER = 70 \u00d7 kg^0.75 = ${rer.toFixed(0)} kcal here. Within \u00b1${tol}% counts as on target. Adjust to the dog\u2019s body condition over time.`,
         strip(kcal, mer*(1-ENERGY_TOLERANCE), mer*(1+ENERGY_TOLERANCE), `${kcal.toFixed(0)} kcal`, v=>v.toFixed(0)),
-        a.energy==="unknown" ? "enter the dog\u2019s weight" : `${pctText(ePct)} of need${a.energy==="high"?" \u00b7 overfeeding":a.energy==="low"?" \u00b7 underfeeding":""}`,
+        a.energy==="unknown" ? "enter the dog\u2019s weight" : `${pctText(ePct)} of daily need${a.energy==="high"?" \u00b7 overfeeding":a.energy==="low"?" \u00b7 underfeeding":""}`,
         `in ${a.grams.toFixed(0)} g of food`)
   + vrow(caStatus==="within range"?"okrow":"low", "Ca : P ratio" + missWarn("Calcium or phosphorus", a.caPMissing),
         "Calcium to phosphorus by weight. Meat is phosphorus-rich, so home-cooked diets usually need a calcium source to land between 1:1 and 2:1.",
         strip(Number.isNaN(caP)?0:caP, 1, 2, caText, v=>v.toFixed(1)), caStatus)
-  + vrow(a.n6n3.status==="ok"?"okrow":a.n6n3.status==="high"?"low":"", "Omega-6 : Omega-3" + missWarn("A fatty acid", a.n6n3.missing),
-        `AAFCO caps (linoleic + arachidonic) : (alpha-linolenic + EPA + DHA) at ${N6N3_MAX}:1 for adult dogs. Omega-3 has no minimum of its own; enough is needed to hold the ratio. Fish, fish oil and flaxseed lower it.`,
+  + vrow(a.n6n3.status==="ok"?"okrow":a.n6n3.status==="high"?"low":"",
+        `<span class="wrap">Omega-6 :<br>Omega-3 ${info(`AAFCO caps (linoleic + arachidonic) : (alpha-linolenic + EPA + DHA) at ${N6N3_MAX}:1 for adult dogs. Omega-3 has no minimum of its own; enough is needed to hold the ratio. Fish, fish oil and flaxseed lower it.`)}${missWarn("A fatty acid", a.n6n3.missing)}</span>`,
+        "",
         strip(Number.isNaN(a.n6n3.value)?0:a.n6n3.value, 1, N6N3_MAX, ratioText(a.n6n3.value, 1) + " : 1", v=>v.toFixed(0), null, true),
         a.n6n3.status==="unknown" ? (a.n6n3.missing.length ? "incomplete fatty-acid data" : "no fatty-acid data") : a.n6n3.status==="high" ? `above ${N6N3_MAX}:1 \u00b7 add omega-3` : `within ${N6N3_MAX}:1`)
   + vrow(a.ePufa.status==="ok"?"okrow":a.ePufa.status==="low"?"low":"", "Vitamin E : PUFA" + missWarn("Vitamin E or polyunsaturated fat", a.ePufa.missing),
         `AAFCO asks for at least ${E_PUFA_MIN} IU of vitamin E per gram of polyunsaturated fat, since vitamin E is used up protecting those fats. Adding fish oil raises the need.`,
-        strip(Number.isNaN(a.ePufa.value)?0:a.ePufa.value, E_PUFA_MIN, null, ratioText(a.ePufa.value) + " IU/g", v=>v.toFixed(1)),
+        strip(Number.isNaN(a.ePufa.value)?0:a.ePufa.value, E_PUFA_MIN, null, ratioText(a.ePufa.value) + " IU/g", v=>v.toFixed(1), null, false,
+              { open: "There is no upper limit on vitamin E per gram of polyunsaturated fat; more is fine. The band is open-ended and drawn just past the value." }),
         a.ePufa.status==="unknown" ? (a.ePufa.missing.length ? "incomplete data" : "no data") : a.ePufa.status==="low" ? `below ${E_PUFA_MIN} IU/g \u00b7 add vitamin E` : `at least ${E_PUFA_MIN} IU/g`);
 
   const srcAttrs = keys => { const sr = SOURCES[keys[0]]; return sr ? ` data-src="${esc(sr.url)}" data-src-title="${esc(sr.title)}"` : ""; };
@@ -156,41 +170,58 @@ export function renderAnalysis(){
     const advTip = r.adv ? `${r.name} has no AAFCO maximum. The dashed line is ${r.adv.basis}: ${fmt(r.adv.max)} ${u} per 1,000 kcal, ${fmt(r.dayAdv)} ${u} a day for this dog. ${r.adv.why}` : "";
     const over = r.status==="high" || r.status==="watch", under = r.status==="low" || r.status==="marginal";
     const sign = over ? note?.excess : under ? note?.deficit : "";        // what sustained excess or shortfall looks like
-    const noteTip = [r.status==="watch" ? advTip : "", sign].filter(Boolean).join(" ");
-    const noteIcon = noteTip ? " " + info(noteTip, 12, srcAttrs(r.status==="watch" ? r.adv.src : note.src)) : "";
+    const noteIcon = sign ? " " + info(sign, 12, srcAttrs(note.src)) : "";
     const st = r.status==="unknown" ? "enter the dog\u2019s weight"
       : r.status==="high" ? "over max" + noteIcon
       : r.status==="watch" ? "above advisory level" + noteIcon
       : r.status==="low" ? (isEPA ? "below target \u00b7 " : "LOW \u00b7 ") + ge + pctText(r.pct) + noteIcon
       : r.status==="marginal" ? "marginal \u00b7 " + ge + pctText(r.pct) + noteIcon
-      : r.dayMin ? ge + pctText(r.pct) + " of need" : "no minimum" + (PURPOSE[r.name] ? " " + info(PURPOSE[r.name], 12) : "");
+      : r.dayMin ? ge + pctText(r.pct) + (isEPA ? " of target" : " of daily minimum") : "no minimum" + (PURPOSE[r.name] ? " " + info(PURPOSE[r.name], 12) : "");
     const miss = r.missing.length ? " " + warn(`${r.name} is not reported for: ${list(r.missing.map(m=>m.name))}.`, 13, ` data-jump="${r.j}"`) : "";
     // with no energy need to scale by, fall back to judging density against the per-1,000 kcal profile
-    const bar = r.status==="unknown" ? strip(r.per1000, r.min, r.max, `${fmt(r.per1000)} /1,000 kcal`, fmt, r.adv?.max)
-                                     : strip(r.day, r.dayMin, r.dayMax, fmt(r.day), fmt, r.dayAdv);
+    const ends = r.adv ? { adv: { tip: advTip, src: SOURCES[r.adv.src[0]] } }
+      : { open: `AAFCO sets no maximum for ${r.name.toLowerCase()}, and no other published upper figure exists. The band is open-ended: it is drawn to 1.3\u00d7 the larger of the value and the minimum so the dot has room, and being well above the minimum is normal.` };
+    const bar = r.status==="unknown" ? strip(r.per1000, r.min, r.max, `${fmt(r.per1000)} /1,000 kcal`, fmt, r.adv?.max, false, ends)
+                                     : strip(r.day, r.dayMin, r.dayMax, fmt(r.day), fmt, r.dayAdv, false, ends);
     return `<tr class="${cls}"><td><span class="nm">${r.name}${breeds}${miss}</span><span class="src" style="display:block">${u}</span></td>
       <td class="c-range">${bar}</td><td class="status">${st}</td></tr>`;
   }).join("");
-  document.querySelector("#tbl-an tbody").innerHTML = rows;
+  document.querySelector("#tbl-an tbody").innerHTML = vitals + `<tr class="group"><td colspan="3">Nutrients per day</td></tr>` + rows;
   syncColumns();
 }
 /**
- * Line the three tables up: the first column of the inputs, quick checks and
- * nutrient tables is as wide as the widest entry in any of them, so the value
- * column of the inputs starts where the range columns do. The range column has
- * a fixed width (CSS) and the status column takes whatever is left, so those
- * match across tables by construction. The first column is shrunk to its
- * content for a moment to measure it, then every table gets the largest width.
+ * Size the analysis table's columns. The first column is measured at its
+ * content width (its widest entry), the status column likewise. (The inputs
+ * table keeps its own compact layout, with each value beside its label.) The
+ * strip takes its full width (STRIP_MAX) unless the table is too narrow, in
+ * which case it shrinks towards STRIP_MIN. A modest fixed gap (GAP) sits on
+ * either side of the strip, shrinking only when the table is too narrow, so
+ * the strip stays close to the names and the status close to the strip; any
+ * width left over falls at the far right. Each measured column is shrunk to
+ * its content for a moment to measure it.
  */
+const STRIP_MAX = 14, STRIP_MIN = 4, GAP = 1.25, GAP_MIN = 0.5; // rem
 export function syncColumns(){
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const th = (id, col) => document.getElementById(id)?.tHead?.rows[0]?.cells[col];
-  const sync = ths => {
+  const measure = ths => {
     ths = ths.filter(Boolean);
     ths.forEach(t => { t.style.width = ""; t.classList.add("fit"); });
     const w = Math.ceil(Math.max(...ths.map(t => t.getBoundingClientRect().width)));
-    ths.forEach(t => { t.classList.remove("fit"); t.style.width = w + "px"; });
+    ths.forEach(t => t.classList.remove("fit"));
+    return w;
   };
-  sync([th("tbl-in", 0), th("tbl-vitals", 0), th("tbl-an", 0)]);
+  const first = [th("tbl-an", 0)], ranges = [th("tbl-an", 1)], status = [th("tbl-an", 2)];
+  const c0 = measure(first), c2 = measure(status);
+  const table = document.getElementById("tbl-an")?.clientWidth || 0;
+  // the measured columns include their cell padding; the range cell needs its own padding on top of strip + gap
+  const cell = ranges.filter(Boolean)[0], pad = cell ? parseFloat(getComputedStyle(cell).paddingLeft) + parseFloat(getComputedStyle(cell).paddingRight) : 0;
+  const strip = Math.max(STRIP_MIN * rem, Math.min(STRIP_MAX * rem, table - c0 - c2 - pad - 3 * GAP_MIN * rem));
+  const gap = Math.max(0, Math.min(GAP * rem, (table - c0 - strip - c2 - pad) / 3));
+  first.filter(Boolean).forEach(t => t.style.width = Math.round(c0 + gap) + "px");
+  ranges.filter(Boolean).forEach(t => t.style.width = Math.round(strip + gap + pad) + "px");
+  status.filter(Boolean).forEach(t => t.style.width = "");      // takes the rest: its content plus the same gap
+  document.getElementById("tbl-an")?.style.setProperty("--strip", strip + "px");
   placeLabels();
 }
 

@@ -16,10 +16,12 @@ export const iKcal=0, iCa=3, iP=4;
 const at = name => NUTS.findIndex(n => n[0]===name);
 export const iVitE=at("Vitamin E"), iEPA=at("EPA+DHA"), iLA=at("Linoleic acid"), iALA=at("Alpha-linolenic acid"),
   iAA=at("Arachidonic acid"), iPUFA=at("Polyunsaturated fat");
-/** Row order for the analysis table: fats together, B vitamins together, whatever the storage order. */
-export const DISPLAY = ["Energy","Protein","Fat","Linoleic acid","Alpha-linolenic acid","Arachidonic acid","EPA+DHA","Polyunsaturated fat",
-  "Calcium","Phosphorus","Potassium","Sodium","Magnesium","Iron","Zinc","Copper","Manganese","Selenium","Iodine",
-  "Vitamin A","Vitamin D","Vitamin E","Thiamin B1","Riboflavin B2","Niacin B3","Pantothenic acid B5","Vitamin B6","Vitamin B12","Folate","Choline"].map(at);
+/** Row order for the analysis table: the familiar and important first, the obscure last, whatever the storage order. */
+export const DISPLAY = ["Energy","Protein","Fat","Linoleic acid","EPA+DHA",
+  "Calcium","Phosphorus","Sodium","Potassium","Magnesium","Iron","Zinc",
+  "Vitamin A","Vitamin D","Vitamin E","Thiamin B1","Riboflavin B2","Niacin B3","Vitamin B6","Vitamin B12","Folate","Pantothenic acid B5","Choline",
+  "Iodine","Selenium","Copper","Manganese",
+  "Alpha-linolenic acid","Arachidonic acid","Polyunsaturated fat"].map(at);
 if(DISPLAY.length!==NUTS.length || DISPLAY.includes(-1)) throw new Error("DISPLAY does not match NUTS");
 
 /* ---------- advisory upper levels for nutrients AAFCO leaves open-ended ---------- */
