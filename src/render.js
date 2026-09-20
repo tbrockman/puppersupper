@@ -216,16 +216,14 @@ export function renderAnalysis(){
 }
 /**
  * Size the analysis table's columns. The first column is measured at its
- * content width (its widest entry), the status column likewise. (The inputs
- * table keeps its own compact layout, with each value beside its label.) The
- * strip takes its full width (STRIP_MAX) unless the table is too narrow, in
- * which case it shrinks towards STRIP_MIN. A modest fixed gap (GAP) sits on
- * either side of the strip, shrinking to GAP_MIN when the table is narrow and
- * no further: past that the table is given a minimum width and scrolls
- * sideways instead of crowding. Any width left over falls at the far right. Each measured column is shrunk to
- * its content for a moment to measure it.
+ * content width (its widest entry), the status column likewise. A small fixed
+ * gap sits either side of the strip and the strip takes all the width that is
+ * left; on a narrow screen it keeps its minimum and the table scrolls sideways
+ * instead of crowding. (The inputs table keeps its own compact layout, with
+ * each value beside its label.) Each measured column is shrunk to its content
+ * for a moment to measure it.
  */
-const STRIP_MAX = 14, STRIP_MIN = 8, GAP = 1.25, GAP_MIN = 1; // rem: below these the table overflows (and scrolls) rather than crowding
+const STRIP_MIN = 8, GAP = 1.25; // rem: the strip never narrower than this (the table overflows and scrolls instead); the gap either side of it
 export function syncColumns(){
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const th = (id, col) => document.getElementById(id)?.tHead?.rows[0]?.cells[col];
@@ -242,9 +240,10 @@ export function syncColumns(){
   const table = tbl?.clientWidth || 0;
   // the measured columns include their cell padding; the range cell needs its own padding on top of strip + gap
   const cell = ranges.filter(Boolean)[0], pad = cell ? parseFloat(getComputedStyle(cell).paddingLeft) + parseFloat(getComputedStyle(cell).paddingRight) : 0;
-  const strip = Math.max(STRIP_MIN * rem, Math.min(STRIP_MAX * rem, table - c0 - c2 - pad - 3 * GAP_MIN * rem));
-  const gap = Math.max(GAP_MIN * rem, Math.min(GAP * rem, (table - c0 - strip - c2 - pad) / 3));
-  if(tbl) tbl.style.minWidth = Math.ceil(c0 + strip + c2 + pad + 3 * gap) + "px";   // on a narrow screen this overflows into a scroll
+  // a small fixed gap either side of the strip; the strip takes everything else
+  const gap = GAP * rem;
+  const strip = Math.max(STRIP_MIN * rem, table - c0 - c2 - pad - 2 * gap);
+  if(tbl) tbl.style.minWidth = Math.ceil(c0 + strip + c2 + pad + 2 * gap) + "px";   // on a narrow screen this overflows into a scroll
   first.filter(Boolean).forEach(t => t.style.width = Math.round(c0 + gap) + "px");
   ranges.filter(Boolean).forEach(t => t.style.width = Math.round(strip + gap + pad) + "px");
   status.filter(Boolean).forEach(t => t.style.width = "");      // takes the rest: its content plus the same gap
@@ -288,7 +287,8 @@ export function initTooltips(){
   document.addEventListener("focusout", e=>{ if(target(e)) hide(); });
   document.addEventListener("click", e=>{
     if(inTip(e.target)){                                         // a tap on an actionable tip fires its action
-      if(e.target.closest("a")){ hide(); return; }               // a source link just opens
+      const a = tip.querySelector("a");
+      if(a){ if(!e.target.closest("a")) window.open(a.href, "_blank", "noopener"); hide(); return; }   // anywhere on a sourced tip opens the source
       const j = current?.dataset.jump; hide();
       if(j!=null) document.dispatchEvent(new CustomEvent("jump-to-missing", { detail:{ j:+j } }));
       return;

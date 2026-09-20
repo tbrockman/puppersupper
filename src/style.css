@@ -231,7 +231,7 @@ td.actions button[data-f="edit"]{position:relative}
   left:clamp(4.5px, var(--x), calc(100% - 4.5px)); transform:translate(-50%,-50%); background:var(--mark)}
 /* the value above its dot, the strip, and its minimum and maximum beneath */
 /* no side padding: the strip starts under the "Range" header, and end labels spill past it into the neighbours' padding */
-.range{display:flex; flex-direction:column; gap:2px; padding:1px 0; width:var(--strip, 14rem); max-width:100%} /* width set by syncColumns(); the rest of the cell stays empty */
+.range{display:flex; flex-direction:column; gap:2px; padding:1px 0; width:var(--strip, 14rem); max-width:100%} /* width set by syncColumns() */
 .tk.adv{text-decoration:underline dotted; text-underline-offset:2px} /* an advisory level, not an AAFCO maximum */
 .tk.info{display:inline; cursor:help; border-radius:2px} .tk.info:hover, .tk.info:focus{color:var(--moss)}
 .vlabel, .ticks{position:relative; height:calc(.68rem * 1.2); font-size:.68rem; line-height:1.2; color:var(--ink-soft)}
