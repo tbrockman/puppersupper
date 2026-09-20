@@ -12,7 +12,7 @@ body{
 }
 
 /* ---------- header ---------- */
-header{padding:1.1rem 2rem .9rem; border-bottom:1px solid var(--rule)}
+header{padding:1.1rem 2rem .9rem;}
 h1{font-size:1.45rem; font-weight:700; letter-spacing:-.01em; display:flex; align-items:center; gap:.4rem; line-height:1.2; min-width:0; flex-wrap:wrap}
 h1 .logo{font-size:1.9rem; line-height:1; flex:none}
 h1 .edit{max-width:100%; display:flex; gap:.35rem}
