@@ -223,7 +223,7 @@ export function renderAnalysis(){
  * each value beside its label.) Each measured column is shrunk to its content
  * for a moment to measure it.
  */
-const STRIP_MIN = 8, GAP = 1.25; // rem: the strip never narrower than this (the table overflows and scrolls instead); the gap either side of it
+const STRIP_MIN = 8, GAP = 3, STATUS_MIN = 9; // rem: the strip never narrower than this (the table overflows and scrolls instead); the gap either side of it; the status column's floor
 export function syncColumns(){
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const th = (id, col) => document.getElementById(id)?.tHead?.rows[0]?.cells[col];
@@ -235,7 +235,7 @@ export function syncColumns(){
     return w;
   };
   const first = [th("tbl-an", 0)], ranges = [th("tbl-an", 1)], status = [th("tbl-an", 2)];
-  const c0 = measure(first), c2 = measure(status);
+  const c0 = measure(first), c2 = Math.max(measure(status), STATUS_MIN * rem);
   const tbl = document.getElementById("tbl-an"); if(tbl) tbl.style.minWidth = "";   // measure the space actually available, not last time's overflow
   const table = tbl?.clientWidth || 0;
   // the measured columns include their cell padding; the range cell needs its own padding on top of strip + gap
@@ -246,7 +246,7 @@ export function syncColumns(){
   if(tbl) tbl.style.minWidth = Math.ceil(c0 + strip + c2 + pad + 2 * gap) + "px";   // on a narrow screen this overflows into a scroll
   first.filter(Boolean).forEach(t => t.style.width = Math.round(c0 + gap) + "px");
   ranges.filter(Boolean).forEach(t => t.style.width = Math.round(strip + gap + pad) + "px");
-  status.filter(Boolean).forEach(t => t.style.width = "");      // takes the rest: its content plus the same gap
+  status.filter(Boolean).forEach(t => t.style.width = Math.round(c2) + "px");
   document.getElementById("tbl-an")?.style.setProperty("--strip", strip + "px");
   placeLabels();
 }
